@@ -1,0 +1,108 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+{% include 'base/navbar.html' with active='markets' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+
+    <div class="col-sm-6 col-sm-push-3">
+
+        <div class="row">
+            <div class="col-md-9">
+                <blockquote>
+                    <h1>[{{ code }}]</h1>
+                    <p>{{ description }}</p>
+                    <footer>Resolves on {{ resolve_date }} in {{ days_remaining }} days.</footer>
+                </blockquote>
+            </div>
+            <div class="col-md-3">
+                {% if stake %}
+                <br />
+                <h5 class="text-center text-muted">CURRENT STAKE</h5>
+                {% if stake.affirmative %}
+                <h3 class="text-center text-success">${{ stake.quantity }}</h3>
+                <h6 class="text-center text-success">FOR AFFIRMATIVE</h6>
+                {% else %}
+                <h3 class="text-center text-danger">${{ stake.quantity }}</h3>
+                <h6 class="text-center text-danger">FOR NEGATIVE</h6>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <canvas id="price-chart" height="190"></canvas>
+
+        <div class="btn-group">
+            <button type="button" id="interval" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                Interval <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li><a href="#">Todo</a></li>
+            </ul>
+            <br /><br /><br />
+        </div>
+    </div>
+
+    <div class="col-sm-3 col-sm-pull-6">
+
+        <div class="well">
+            <h4 class="text-center text-success lead">AFFIRMATIVE</h4>
+            <h3 class="text-center text-success">{{ price_aff }}&#162;</h3>
+            <h5 class="text-center text-muted">LATEST PRICE</h5>
+        </div>
+
+        {% include 'markets/order.html' with order_form=form_aff submit_id='order-aff' %}
+
+        <div class="well">
+            <h5 class="text-center text-muted">PENDING BIDS</h5>
+            <table class="table table-condensed table-hover">
+                <tbody>
+                    {% for o in orders_aff %}
+                    <tr class="text-success">
+                        <td>{{ o.user.username }}</td>
+                        <td>{{ o.price }}&#162;</td>
+                        <td>x{{ o.quantity }}</td>
+                        <td>{{ o.time|date:"j/n" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-sm-3">
+
+        <div class="well">
+            <h4 class="text-center text-danger lead">NEGATIVE</h4>
+            <h3 class="text-center text-danger">{{ price_neg }}&#162;</h3>
+            <h5 class="text-center text-muted">LATEST PRICE</h5>
+        </div>
+
+        {% include 'markets/order.html' with order_form=form_neg submit_id='order-neg' %}
+
+        <div class="well">
+            <h5 class="text-center text-muted">PENDING BIDS</h5>
+            <table class="table table-condensed table-hover">
+                <tbody>
+                    {% for o in orders_neg %}
+                    <tr class="text-danger">
+                        <td>{{ o.user.username }}</td>
+                        <td>{{ o.price }}&#162;</td>
+                        <td>x{{ o.quantity }}</td>
+                        <td>{{ o.time|date:"j/n" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+        
+<script type="text/javascript" src="{{ code }}/history"></script>
+<script type="text/javascript" src="{% static "markets/js/proposition.js" %}"></script>
+
+{% endblock %}

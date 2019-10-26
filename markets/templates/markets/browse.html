@@ -1,0 +1,41 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+{% include 'base/navbar.html' with active='markets' %}
+{% endblock %}
+
+{% block content %}
+
+<h3 class="text-center"><b>PROPOSITIONAL MARKETS</b></h3>
+<br /><br />
+<table class="table table-hover">
+    <thead>
+        <th>CODE</th>
+        <th>PROPOSITION</th>
+        <th class="text-success">AFFIRMATIVE</th>
+        <th class="text-danger">NEGATIVE</th>
+        <th class="text-warning">VOLUME (24H)</th>
+        <th>RESOLVES ON</th>
+        <th></th>
+    </thead>
+    <tbody>
+        {% for p in propositions %}
+        <tr>
+            <td><h4 class="lead">[{{ p.code }}]</h4></td>
+            <td><h4><small>{{ p.description }}</small></h4></td>
+            <td><h4 class="lead text-success">{{ p.price_aff }}&#162; <small>({{ p.change_aff }}%)</small></h4></td>
+            <td><h4 class="lead text-danger">{{ p.price_neg }}&#162; <small>({{ p.change_neg }}%)</small></h4></td>
+            <td><h4 class="lead text-warning">${{ p.volume }}</h4></td>
+            <td><h4><small>{{ p.resolve_date }}</small></h4></td>
+            <td><a href="{{ p.code }}"><button type="button" class="btn btn-primary btn-me">View</button></a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br /><br />
+<div class="text-center">
+    <a href=""><button type="button" class="btn btn-default btn-lg">Create New Proposition</button></a>
+</div>
+
+{% endblock %}

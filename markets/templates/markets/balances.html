@@ -1,0 +1,93 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+{% include 'base/navbar.html' with active='balances' %}
+{% endblock %}
+
+{% block content %}
+
+<br />
+<div class="row">
+    <div class="col-sm-6">
+        <h1 class="text-center text-warning">${{ funds }}</h1>
+        <h4 class="text-center text-muted">AVAILABLE FUNDS</h4>
+    </div>
+    <div class="col-sm-6">
+        <h1 class="text-center text-warning">${{ value }}</h1>
+        <h4 class="text-center text-muted">ESTIMATED VALUE</h4>
+    </div>
+</div>
+
+{% if stakes %}
+<br /><br />
+<h3 class="text-center"><b>STAKES</b></h3>
+<br /><br />
+<table class="table table-hover">
+    <thead>
+        <th>CODE</th>
+        <th>PROPOSITION</th>
+        <th>TYPE</th>
+        <th>STAKE</th>
+        <th>RESOLVES ON</th>
+        <th></th>
+    </thead>
+    <tbody>
+        {% for s in stakes %}
+        <tr>
+            <td><h4 class="lead">[{{ s.proposition.code }}]</h4></td>
+            <td><h4><small>{{ s.proposition.description }}</small></h4></td>
+            {% if s.affirmative %}
+            <td><h4 class="lead text-success">AFFIRMATIVE</h4></td>
+            {% else %}
+            <td><h4 class="lead text-danger">NEGATIVE</h4></td>
+            {% endif %}
+            <td><h4 class="lead">${{ s.quantity }}</h4></td>
+            <td><h4><small>{{ s.proposition.resolves_on }}</small></h4></td>
+            <td><a href="/markets/{{ s.proposition.code }}">
+                <button type="button" class="btn btn-primary btn-me">View</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if orders %}
+<br /><br />
+<h3 class="text-center"><b>ORDERS</b></h3>
+<br /><br />
+<table class="table table-hover">
+    <thead>
+        <th>CODE</th>
+        <th>TYPE</th>
+        <th>QUANTITY</th>
+        <th>PRICE</th>
+        <th>TOTAL</th>
+        <th>TIME</th>
+        <th></th>
+    </thead>
+    <tbody>
+        {% for o in orders %}
+        <tr>
+            <td><h4 class="lead">[{{ o.proposition.code }}]</h4></td>
+            {% if o.affirmative %}
+            <td><h4 class="lead text-success">AFFIRMATIVE</h4></td>
+            {% else %}
+            <td><h4 class="lead text-danger">NEGATIVE</h4></td>
+            {% endif %}
+            <td><h4 class="lead">{{ o.quantity }}</h4></td>
+            <td><h4 class="lead">{{ o.price }}&#162;</h4></td>
+            {% widthratio o.quantity 1 o.price as total %}
+            <td><h4 class="lead">${% widthratio total 100 1 %}</h4></td>
+            <td><h4 class="lead"><small>{{ o.time }}</small></h4></td>
+            <td><a href="/markets/cancel/{{ o.id }}">
+                <button type="button" class="btn btn-danger btn-me">Cancel</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}
