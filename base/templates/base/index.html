@@ -1,0 +1,64 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+{% include 'base/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<br /><br />
+<h1 class="text-center"><b>Welcome to SwagBets.</b></h1>
+<h4 class="text-center text-muted">A platform for speculating on future events with market-based odds.</h4>
+
+<br /><br />
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <br /><br />
+                    <img src="{% static 'base/img/stock.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">Take a look at current listings and odds.</p>
+                    <br />
+                    <a href="/markets"><button type="button" class="btn btn-primary">View Markets</button></a>
+                    <br /><br />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <br /><br />
+                    <img src="{% static 'base/img/balance.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">View your current stakes and holdings.</p>
+                    <br />
+                    <a href="/markets/balances"><button type="button" class="btn btn-primary">Show Balances</button></a>
+                    <br /><br />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <br /><br />
+                    <img src="{% static 'base/img/avatar.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">Open a new account to start trading.</p>
+                    <br />
+                    <a href="/accounts/register"><button type="button" class="btn btn-primary">Create Account</button></a>
+                    <br /><br />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
