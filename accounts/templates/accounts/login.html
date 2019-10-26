@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+{% include 'base/navbar.html' with active='login' %}
+{% endblock %}
+
+{% block content %}
+
+<br /><br />
+
+{% if form.errors %}
+{% for field in form %}
+{% for error in field.errors %}
+    <div class="alert alert-danger">
+        <strong>{{ error|escape }}</strong>
+    </div>
+{% endfor %}
+{% endfor %}
+{% for error in form.non_field_errors %}
+<div class="alert alert-danger">
+    <strong>{{ error|escape }}</strong>
+</div>
+{% endfor %}
+{% endif %}
+
+<form method="POST">
+    <div class="panel panel-default login-panel">
+        <div class="form-horizontal text-center panel-body">
+            <img src="{% static 'base/img/avatar.png' %}" width="100px" height="100px" />
+            {% csrf_token %}
+            <br /><br />
+            {{form.username}}
+            <br />
+            {{form.password}}
+            <br /><br />
+            <button type="submit" class="btn btn-primary btn-block">
+                Login
+                <span class="glyphicon glyphicon-log-in"></span>
+            </button>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
