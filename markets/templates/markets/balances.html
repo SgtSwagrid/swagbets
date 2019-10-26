@@ -14,7 +14,7 @@
         <h4 class="text-center text-muted">AVAILABLE FUNDS</h4>
     </div>
     <div class="col-sm-6">
-        <h1 class="text-center text-warning">${{ value }}</h1>
+        <h1 class="text-center text-warning">${{ est_value }}</h1>
         <h4 class="text-center text-muted">ESTIMATED VALUE</h4>
     </div>
 </div>
@@ -43,7 +43,7 @@
             <td><h4 class="lead text-danger">NEGATIVE</h4></td>
             {% endif %}
             <td><h4 class="lead">${{ s.quantity }}</h4></td>
-            <td><h4><small>{{ s.proposition.resolves_on }}</small></h4></td>
+            <td><h4><small>{{ s.proposition.resolve_date }}</small></h4></td>
             <td><a href="/markets/{{ s.proposition.code }}">
                 <button type="button" class="btn btn-primary btn-me">View</button>
             </a></td>

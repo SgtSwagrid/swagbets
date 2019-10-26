@@ -96,13 +96,11 @@ class Proposition(models.Model):
 
         return stake.get() if stake.exists() else None
 
-    def place_order(self, user, affirm, quantity, price, total):
+    def place_order(self, user, affirm, quantity, price):
         """Place a new order of this proposition."""
 
         # Deduct price of order from user.
         funds = Funds.objects.get(user_id=user.id)
-        funds.value -= total
-        funds.save()
 
         # Get all orders which match with this one.
         orders = (Order.objects
@@ -118,9 +116,12 @@ class Proposition(models.Model):
                 proposition=self,
                 affirmative_user=user if affirm else order.user,
                 negative_user=order.user if affirm else user,
-                price=(price-order.price+100)/2 if affirm else (order.price-price+100)/2,
+                price=100-order.price if affirm else order.price,
                 quantity=min(quantity, order.quantity)
             )
+
+            # Deduct price of transaction from user.
+            funds.value -= (100-order.price) * trans.quantity / 100
 
             # Add stake to both users.
             self.add_stake(trans.affirmative_user, True, trans.quantity)
@@ -137,6 +138,7 @@ class Proposition(models.Model):
 
         # Save the remainder of the order if it wasn't completed.
         if quantity > 0:
+            funds.value -= price * quantity / 100
             Order.objects.create(
                 proposition=self,
                 user=user,
@@ -144,6 +146,7 @@ class Proposition(models.Model):
                 quantity=quantity,
                 affirmative=affirm
             )
+        funds.save()
 
     def add_stake(self, user, affirm, quantity):
         """Give stake in this proposition to a user."""
@@ -220,7 +223,7 @@ class Order(models.Model):
         """Cancels this order and refunds the user."""
 
         # Refund price of order.
-        funds = Funds.objects.get(user_id=request.user.id)
+        funds = Funds.objects.get(user_id=self.user.id)
         funds.value = float(funds.value) + (self.price * self.quantity / 100)
 
         # Delete order.

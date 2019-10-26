@@ -39,8 +39,8 @@ def proposition_view(request, code):
     if request.POST.get('order-aff'):
         form_aff = OrderForm(request.POST, user=request.user, prefix='aff')
         if form_aff.is_valid():
-            prop.place_order(request.user, True, form_aff.cleaned_data['quantity'],
-                form_aff.cleaned_data['price'], form_aff.cleaned_data['total'])
+            prop.place_order(request.user, True,
+                form_aff.cleaned_data['quantity'], form_aff.cleaned_data['price'])
             return redirect('/markets/'+code)
     else: form_aff = OrderForm(None, user=request.user, prefix='aff')
 
@@ -48,8 +48,8 @@ def proposition_view(request, code):
     if request.POST.get('order-neg'):
         form_neg = OrderForm(request.POST, user=request.user, prefix='neg')
         if form_neg.is_valid():
-            prop.place_order(request.user, False, form_neg.cleaned_data['quantity'],
-                form_neg.cleaned_data['price'], form_neg.cleaned_data['total'])
+            prop.place_order(request.user, False,
+                form_neg.cleaned_data['quantity'], form_neg.cleaned_data['price'])
             return redirect('/markets/'+code)
     else: form_neg = OrderForm(None, user=request.user, prefix='neg')
 
@@ -80,12 +80,12 @@ def balances_view(request):
 
     if Funds.objects.filter(user_id=request.user.id).exists():
         f = Funds.objects.get(user_id=request.user.id)
-        funds = f.value; value = f.get_estimated_value();
-    else: funds = 0; value = 0
+        funds = f.value; est_value = f.get_estimated_value();
+    else: funds = 0; est_value = 0
 
     return render(request, 'markets/balances.html', {
         'funds': funds,
-        'value': value,
+        'est_value': est_value,
         'stakes': Stake.objects.filter(user_id=request.user.id),
         'orders': Order.objects.filter(user=request.user.id)
     })

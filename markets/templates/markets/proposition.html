@@ -58,7 +58,7 @@
         {% include 'markets/order.html' with order_form=form_aff submit_id='order-aff' %}
 
         <div class="well">
-            <h5 class="text-center text-muted">PENDING BIDS</h5>
+            <h5 class="text-center text-muted">PENDING ORDERS</h5>
             <table class="table table-condensed table-hover">
                 <tbody>
                     {% for o in orders_aff %}
@@ -85,7 +85,7 @@
         {% include 'markets/order.html' with order_form=form_neg submit_id='order-neg' %}
 
         <div class="well">
-            <h5 class="text-center text-muted">PENDING BIDS</h5>
+            <h5 class="text-center text-muted">PENDING ORDERS</h5>
             <table class="table table-condensed table-hover">
                 <tbody>
                     {% for o in orders_neg %}
