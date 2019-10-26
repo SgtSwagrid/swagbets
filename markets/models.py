@@ -107,12 +107,11 @@ class Proposition(models.Model):
         # Get all orders which match with this one.
         orders = (Order.objects
             .filter(proposition_id=self.id)
-            .filter(affirmative=not affirm))
+            .filter(affirmative=not affirm)
+            .filter(price__gte=100 - price))
 
         # For each matching order.
         for order in orders:
-            # Stop if the matching price isn't good enough.
-            if order.price + price < 100: break
 
             # Create a new transaction.
             trans = Transaction.objects.create(
