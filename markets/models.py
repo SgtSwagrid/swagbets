@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User
+from decimal import Decimal
 
 class Proposition(models.Model):
     """A propostional market for which tokens may be traded."""
@@ -121,7 +122,7 @@ class Proposition(models.Model):
             )
 
             # Deduct price of transaction from user.
-            funds.value -= (100-order.price) * trans.quantity / 100
+            funds.value -= Decimal((100-order.price) * trans.quantity / 100)
 
             # Add stake to both users.
             self.add_stake(trans.affirmative_user, True, trans.quantity)
@@ -138,7 +139,7 @@ class Proposition(models.Model):
 
         # Save the remainder of the order if it wasn't completed.
         if quantity > 0:
-            funds.value -= price * quantity / 100
+            funds.value -= Decimal(price * quantity / 100)
             Order.objects.create(
                 proposition=self,
                 user=user,
