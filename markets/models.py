@@ -51,7 +51,7 @@ class Proposition(models.Model):
         # Default to the current time.
         if not end: end = datetime.now()
 
-        # Get prices and start and end of given period.
+        # Get prices at start and end of given period.
         start_price = self.get_price(time=start, affirm=affirm)
         end_price = self.get_price(time=end, affirm=affirm)
 
@@ -123,6 +123,7 @@ class Proposition(models.Model):
 
             # Deduct price of transaction from user.
             funds.value -= Decimal((100-order.price) * trans.quantity / 100)
+            funds.save()
 
             # Add stake to both users.
             self.add_stake(trans.affirmative_user, True, trans.quantity)
@@ -140,6 +141,7 @@ class Proposition(models.Model):
         # Save the remainder of the order if it wasn't completed.
         if quantity > 0:
             funds.value -= Decimal(price * quantity / 100)
+            funds.save()
             Order.objects.create(
                 proposition=self,
                 user=user,
@@ -147,7 +149,6 @@ class Proposition(models.Model):
                 quantity=quantity,
                 affirmative=affirm
             )
-        funds.save()
 
     def add_stake(self, user, affirm, quantity):
         """Give stake in this proposition to a user."""
