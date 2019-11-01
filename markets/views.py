@@ -87,7 +87,7 @@ def balances_view(request):
         'funds': funds,
         'est_value': est_value,
         'stakes': Stake.objects.filter(user_id=request.user.id),
-        'orders': Order.objects.filter(user=request.user.id)
+        'orders': Order.objects.filter(user_id=request.user.id)
     })
 
 def history_view(request, code):
