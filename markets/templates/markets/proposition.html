@@ -101,6 +101,21 @@
         </div>
     </div>
 </div>
+
+{% if user.is_staff %}
+<div class="row">
+    <div class="col-sm-6 text-right">
+        <a href="?resolve=affirmative" class="text-right">
+            <button type="button" class="btn btn-success">Resolve as Affirmative</button>
+        </a>
+    </div>
+    <div class="col-sm-6 text-left">
+        <a href="?resolve=negative">
+            <button type="button" class="btn btn-danger">Resolve as Negative</button>
+        </a>
+    </div>
+</div>
+{% endif %}
         
 <script type="text/javascript" src="{{ code }}/history"></script>
 <script type="text/javascript" src="{% static "markets/js/proposition.js" %}"></script>

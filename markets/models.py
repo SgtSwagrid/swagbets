@@ -194,6 +194,28 @@ class Proposition(models.Model):
                 if(stake.quantity == 0): stake.delete()
                 else: stake.save()
 
+    def resolve(self, affirm):
+
+        if self.active:
+
+            # Cancel all outstanding orders.
+            for order in Order.objects.filter(proposition_id=self.id):
+                order.refund()
+
+            # Mark the proposition as resolved.
+            self.result = affirm
+            self.active = False
+            self.save()
+
+            # Give payouts to the winners.
+            stakes = (Stake.objects
+                .filter(proposition_id=self.id)
+                .filter(affirmative=affirm))
+            for stake in stakes:
+                funds = Funds.objects.get(user_id=stake.user.id)
+                funds.value += stake.quantity
+                funds.save()
+
 class Order(models.Model):
     """A pending order awaiting a matching counter-order."""
 
@@ -301,7 +323,10 @@ class Funds(models.Model):
         value = float(self.value)
 
         # Include stakes, scaled down by latest prices.
-        for s in Stake.objects.filter(user_id=self.user.id):
+        stakes = (Stake.objects
+            .filter(user_id=self.user.id)
+            .filter(proposition__active=True))
+        for s in stakes:
             if s.affirmative: value += s.quantity * s.proposition.get_price(affirm=True) / 100
             else: value += s.quantity * s.proposition.get_price(affirm=False) / 100
 

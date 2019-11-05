@@ -53,6 +53,12 @@ def proposition_view(request, code):
             return redirect('/markets/'+code)
     else: form_neg = OrderForm(None, user=request.user, prefix='neg')
 
+    # Resolve a proposition.
+    if 'resolve' in request.GET and request.user.is_staff:
+        affirm = request.GET.get('resolve') == 'affirmative'
+        prop.resolve(affirm)
+        return redirect('/markets')
+
     return render(request, 'markets/proposition.html', {
         # Proposition information.
         'code': prop.code,
@@ -78,15 +84,33 @@ def balances_view(request):
     if not request.user.is_authenticated:
         return redirect('/accounts/login?next=/markets/balances')
 
+    # Dismiss payouts.
+    if 'dismiss' in request.GET:
+        code = request.GET.get('dismiss')
+        stake = get_object_or_404(Stake, user_id=request.user, proposition__code=code)
+        stake.delete()
+        return redirect('/markets/balances')
+
+    # Cancel order.
+    if 'cancel' in request.GET:
+        id = request.GET.get('cancel')
+        order = get_object_or_404(Order, id=id)
+        if order.user == request.user: order.refund()
+        return redirect('/markets/balances')
+
+    # Get funds available to user.
     if Funds.objects.filter(user_id=request.user.id).exists():
         f = Funds.objects.get(user_id=request.user.id)
         funds = f.value; est_value = f.get_estimated_value();
     else: funds = 0; est_value = 0
 
+    stakes = Stake.objects.filter(user_id=request.user.id)
+
     return render(request, 'markets/balances.html', {
         'funds': funds,
         'est_value': est_value,
-        'stakes': Stake.objects.filter(user_id=request.user.id),
+        'payouts': stakes.filter(proposition__active=False),
+        'stakes': stakes.filter(proposition__active=True),
         'orders': Order.objects.filter(user_id=request.user.id)
     })
 
@@ -98,11 +122,3 @@ def history_view(request, code):
     return render(request, 'markets/history.js', {
         'prices': prop.get_price_history()
     })
-
-def cancel_view(request, id):
-    """Cancels an order with a particular ID."""
-
-    order = get_object_or_404(Order, id=id)
-    # Ensure order is owned by current user; delete and refund order.
-    if order.user == request.user: order.refund()
-    return redirect('/markets/balances')

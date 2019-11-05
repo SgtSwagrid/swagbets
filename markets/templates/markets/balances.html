@@ -19,6 +19,44 @@
     </div>
 </div>
 
+{% if payouts %}
+<br /><br />
+<h3 class="text-center"><b>PAYOUTS</b></h3>
+<br /><br />
+<table class="table table-hover">
+    <thead>
+        <th>CODE</th>
+        <th>PROPOSITION</th>
+        <th>RESULT</th>
+        <th>PAYOUT</th>
+        <th>RESOLVED ON</th>
+        <th></th>
+    </thead>
+    <tbody>
+        {% for p in payouts %}
+        <tr>
+            <td><h4 class="lead">[{{ p.proposition.code }}]</h4></td>
+            <td><h4><small>{{ p.proposition.description }}</small></h4></td>
+            {% if p.proposition.result %}
+            <td><h4 class="lead text-success">AFFIRMATIVE</h4></td>
+            {% else %}
+            <td><h4 class="lead text-danger">NEGATIVE</h4></td>
+            {% endif %}
+            {% if p.affirmative == p.proposition.result %}
+            <td><h4 class="lead">${{ p.quantity }}</h4></td>
+            {% else %}
+            <td><h4 class="lead">$0</h4></td>
+            {% endif %}
+            <td><h4><small>{{ p.proposition.resolve_date }}</small></h4></td>
+            <td><a href="?dismiss={{ p.proposition.code }}">
+                <button type="button" class="btn btn-warning btn-me">Dismiss</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 {% if stakes %}
 <br /><br />
 <h3 class="text-center"><b>STAKES</b></h3>
@@ -81,7 +119,7 @@
             {% widthratio o.quantity 1 o.price as total %}
             <td><h4 class="lead">${% widthratio total 100 1 %}</h4></td>
             <td><h4 class="lead"><small>{{ o.time }}</small></h4></td>
-            <td><a href="/markets/cancel/{{ o.id }}">
+            <td><a href="?cancel={{ o.id }}">
                 <button type="button" class="btn btn-danger btn-me">Cancel</button>
             </a></td>
         </tr>
