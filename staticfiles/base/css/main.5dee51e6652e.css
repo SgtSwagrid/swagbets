@@ -1,0 +1,64 @@
+nav {
+    background-image: url("/static/base/img/linen.57bbfe7c2276.png");
+}
+
+body {
+    background-image: url("/static/base/img/linedpaper.8939bf293e12.png");
+}
+
+input[type=number] {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+    border: 2px solid lightgray;
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    background: none;
+    height: 40px;
+    text-align: center;
+    vertical-align: top;
+    border-radius: 8px;
+    font-size: 20px;
+    background-color: white;
+}
+
+label {
+    font-size: 14px;
+}
+
+input[type=text], input[type=password] {
+    width: 265px;
+    height: 35px;
+}
+
+.login-panel {
+    width: 300px;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+form {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.no-spinners {
+    -moz-appearance: textfield;
+}
+
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.navbar {
+    border-radius: 0px;
+}
+
+img {
+    border-radius: 5px;
+}
