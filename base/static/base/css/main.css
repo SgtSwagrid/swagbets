@@ -1,20 +1,35 @@
+nav {
+    background-image: url("/static/base/img/linen.png");
+}
+
+body {
+    background-image: url("/static/base/img/linedpaper.png");
+}
+
 input[type=number] {
     border: 0;
     outline: 0;
     box-shadow: none;
-    border-bottom: 2px solid lightgray;
-    -moz-border-radius: 0px;
-    -webkit-border-radius: 0px;
-    border-radius: 0px;
+    border: 2px solid lightgray;
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
     background: none;
+    height: 40px;
+    text-align: center;
+    vertical-align: top;
+    border-radius: 8px;
+    font-size: 20px;
+    background-color: white;
+}
+
+label {
+    font-size: 14px;
 }
 
 input[type=text], input[type=password] {
     width: 265px;
     height: 35px;
-}
-
-.showcase-panel {
 }
 
 .login-panel {

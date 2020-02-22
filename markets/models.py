@@ -1,11 +1,10 @@
 from django.db import models
-from django.db.models import Sum
-from datetime import datetime, timedelta
 from django.contrib.auth.models import User
-from decimal import Decimal
+from datetime import datetime, timedelta
+from colorfield.fields import ColorField
 
 class Proposition(models.Model):
-    """A propostional market for which tokens may be traded."""
+    """A propostion market for which tokens may be traded."""
 
     code = models.CharField(max_length=3,
         help_text='The three-letter proposition code.')
@@ -17,204 +16,250 @@ class Proposition(models.Model):
         help_text='The date on which this proposition will resolve.')
 
     active = models.BooleanField(
-        help_text='Whether this proposition is enabled and unresolved.')
+        help_text='Whether this proposition is enabled and unresolved.',
+        default=True)
 
-    result = models.BooleanField(
-        help_text='Whether this proposition resolved in favour of the affirmative.')
+    outcome = models.ForeignKey('Outcome', related_name='outcome',
+        on_delete=models.CASCADE, default=None, blank=True, null=True,
+        help_text='The result of this proposition.')
 
     def __str__(self): return '['+self.code+'] '+self.description
 
-    class Meta: ordering = ['active', 'resolve_date', 'code']
+    class Meta: ordering = ['-active', 'resolve_date', 'code']
 
-    def get_price(self, time=None, affirm=True):
-        """Get the current (or previous) price of this proposition."""
+    def outcomes(self):
+        """Return the queryset of all possible outcomes for this proposition."""
+        return Outcome.objects.filter(proposition=self)
 
-        # Default to the current time.
-        if not time: time = datetime.now()
-        time_str = time.strftime('%Y-%m-%d %H:%M:%S')
+    def outcomes_by_price(self):
+        """Return a list of all outcomes, sorted by price."""
+        return list(sorted(self.outcomes(), key=lambda o: -o.latest_price()))
 
-        # Get all transactions for this proposition before the given time.
-        transactions = (Transaction.objects
-            .filter(proposition_id=self.id)
-            .filter(time__lt=time_str))
+    def place_order(self, outcome, affirm, price, quantity, user):
+        """Place a new order on the proposition."""
 
-        if(transactions.exists()):
-            # Price is given by the most recent transaction.
-            price = transactions.first().price
-            if not affirm: price = 100 - price
-            return price
-        else: return 50
+        # Deduct funds from the user's account.
+        funds = Funds.users.get(user)
+        funds.value = float(funds.value) - quantity * price / 100
+        funds.save()
 
-    def get_change(self, start, end=None, affirm=True):
-        """Get the percentage change in price between two times."""
+        # Place the order.
+        Order.objects.create(proposition=self, outcome=outcome, affirm=affirm,
+             price=price, quantity=quantity, user=user).match()
 
-        # Default to the current time.
-        if not end: end = datetime.now()
+    def trade_volume(self, start=None, end=None):
+        """Returns total trade volume in a time period."""
 
-        # Get prices at start and end of given period.
-        start_price = self.get_price(time=start, affirm=affirm)
-        end_price = self.get_price(time=end, affirm=affirm)
-
-        # Calculate percentage change.
-        return 100 * (end_price - start_price) // start_price
-
-    def get_volume(self, start, end=None):
-        """Get the trade volume between two times."""
-
-        # Default to the current time.
-        if not end: end = datetime.now()
+        # Start from the beginning of time by default.
+        if not start: start = datetime.min
         start_str = start.strftime('%Y-%m-%d %H:%M:%S')
+
+        # End at the current time by default.
+        if not end: end = datetime.now()
         end_str = end.strftime('%Y-%m-%d %H:%M:%S')
 
-        # Sum the quantity of all transactions in the given period.
-        sum = (Transaction.objects
-            .filter(proposition_id=self.id)
+        # Calculate the total trade volume between the start and end times.
+        prices = list(Price.prices
+            .filter(proposition=self)
             .filter(time__gt=start_str)
-            .filter(time__lt=end_str)
-            .aggregate(Sum('quantity'))['quantity__sum'])
+            .filter(time__lt=end_str))
+        return round(sum(p.price * p.quantity for p in prices) / 100)
 
-        return sum if sum != None else 0
+    def bid_volume(self):
+        """Returns current total volume (cents) of ongoing bids."""
 
-    def get_orders(self, affirm=True):
-        """Get pending orders of given type sorted by decreasing price."""
-        return (Order.objects
-            .filter(proposition_id=self.id)
-            .filter(affirmative=affirm))
+        volume = 0
+        for order in Order.objects.filter(proposition=self):
+            volume += order.quantity * order.price
+        return round(volume / 100)
 
-    def get_price_history(self, affirm=True):
-        """Get price history for proposition."""
-        history = list(map(lambda t : {'time': t.time, 'price': t.price},
-                   Transaction.objects.filter(proposition_id=self.id)))
-        history.insert(0, {'time': datetime.now(), 'price': self.get_price(affirm=affirm)})
-        return history
-
-    def get_stake(self, user):
-        """Get stake of given user in this proposition, or None."""
-
-        stake = (Stake.objects
-            .filter(user_id=user.id)
-            .filter(proposition_id=self.id))
-
-        return stake.get() if stake.exists() else None
-
-    def place_order(self, user, affirm, quantity, price):
-        """Place a new order of this proposition."""
-
-        # Deduct price of order from user.
-        funds = Funds.objects.get(user_id=user.id)
-
-        # Get all orders which match with this one.
-        orders = (Order.objects
-            .filter(proposition_id=self.id)
-            .filter(affirmative=not affirm)
-            .filter(price__gte=100 - price))
-
-        # For each matching order.
-        for order in orders:
-
-            # Create a new transaction.
-            trans = Transaction.objects.create(
-                proposition=self,
-                affirmative_user=user if affirm else order.user,
-                negative_user=order.user if affirm else user,
-                price=100-order.price if affirm else order.price,
-                quantity=min(quantity, order.quantity)
-            )
-
-            # Deduct price of transaction from user.
-            funds.value -= Decimal((100-order.price) * trans.quantity / 100)
-            funds.save()
-
-            # Add stake to both users.
-            self.add_stake(trans.affirmative_user, True, trans.quantity)
-            self.add_stake(trans.negative_user, False, trans.quantity)
-
-            # Subtract amount matched from pending orders.
-            order.quantity -= trans.quantity
-            if order.quantity == 0: order.delete()
-            else: order.save()
-
-            # Stop if the new order is completed.
-            quantity -= trans.quantity
-            if quantity == 0: break
-
-        # Save the remainder of the order if it wasn't completed.
-        if quantity > 0:
-            funds.value -= Decimal(price * quantity / 100)
-            funds.save()
-            Order.objects.create(
-                proposition=self,
-                user=user,
-                price=price,
-                quantity=quantity,
-                affirmative=affirm
-            )
-
-    def add_stake(self, user, affirm, quantity):
-        """Give stake in this proposition to a user."""
-        
-        # Get the current stake the user has in this proposition.
-        stake = (Stake.objects
-            .filter(user_id=user.id)
-            .filter(proposition_id=self.id))
-
-        # Create a new stake with the given amount if none already exists.
-        if not stake.exists():
-            Stake.objects.create(
-                user=user,
-                proposition=self,
-                quantity=quantity,
-                affirmative=affirm
-            )
-
-        else:
-            stake = stake.get()
-            
-            # Add the given amount to the existing stake if the types match.
-            if stake.affirmative == affirm:
-                stake.quantity += quantity
-                stake.save()
-
-            # Stakes of opposite types cancel out.
-            else:
-                # Provide a refund for cancelled stakes.
-                funds = Funds.objects.get(user_id=user.id)
-                funds.value += min(quantity, stake.quantity)
-                funds.save()
-
-                # Subtract the given amount from the existing stake.
-                stake.quantity -= quantity
-
-                # A negative stake means the type should be flipped.
-                if stake.quantity < 0:
-                    stake.quantity *= -1
-                    stake.affirmative ^= True
-
-                # A zero stake should be deleted.
-                if(stake.quantity == 0): stake.delete()
-                else: stake.save()
-
-    def resolve(self, affirm):
+    def total_stake(self):
+        """Returns the total stake held among all users."""
 
         if self.active:
+            return sum(t.quantity for t in self.matching_tokens(
+                self.outcomes_by_price()[0]))
+        else: return 0
 
-            # Cancel all outstanding orders.
-            for order in Order.objects.filter(proposition_id=self.id):
-                order.refund()
+    def stake(self, user):
+        """Returns the stake held by the user in this proposition."""
+        return Tokens.tokens.filter(proposition=self).filter(user=user)
 
-            # Mark the proposition as resolved.
-            self.result = affirm
-            self.active = False
-            self.save()
+    def resolve(self, outcome):
+        """Resolve this proposition in favour of a particular outcome."""
 
-            # Give payouts to the winners.
-            stakes = (Stake.objects
-                .filter(proposition_id=self.id)
-                .filter(affirmative=affirm))
-            for stake in stakes:
-                funds = Funds.objects.get(user_id=stake.user.id)
-                funds.value += stake.quantity
-                funds.save()
+        # A proposition cannot be resolved multiple times.
+        if not self.active: return
+
+        # Cancel all outstanding orders.
+        for order in Order.objects.filter(proposition=self):
+            order.cancel()
+
+        # Mark the proposition as resolved.
+        self.outcome = outcome
+        self.active = False
+        self.save()
+
+        # Give payouts to the winners.
+        for tokens in self.matching_tokens(outcome):
+            funds = Funds.users.get(tokens.user)
+            funds.value += tokens.quantity
+            funds.save()
+
+    def matching_tokens(self, outcome):
+        """Get all tokens predicting a particular outcome."""
+
+        return (Tokens.tokens
+
+            # Correct affirmative bets.
+            .filter(outcome=outcome)
+            .filter(affirm=True)
+            .union(Tokens.tokens
+
+                # Correct negative bets.
+                .filter(proposition=self)
+                .exclude(outcome=outcome)
+                .filter(affirm=False)))
+
+class Outcome(models.Model):
+    """A possible, mutually-exclusive outcome for a proposition."""
+
+    code = models.CharField(max_length=3,
+        help_text='The three-letter outcome code.')
+
+    description = models.CharField(max_length=100,
+       help_text='The outcome description.')
+
+    colour = ColorField(default="#444466",
+        help_text='Display colour for this outcome.')
+
+    proposition = models.ForeignKey('Proposition',
+        related_name='proposition', on_delete=models.CASCADE,
+        help_text='The proposition to which this outcome belongs.')
+
+    def __str__(self):
+        return '[' + self.code + '] ' + self.description
+
+    class Meta: ordering = ['proposition', 'code']
+
+    def bid_price(self, affirm=True):
+        """Returns price of top bid."""
+
+        # Find the most recent bid.
+        bids = (Order.objects
+            .filter(outcome=self)
+            .filter(affirm=affirm))
+
+        return bids[0].price if bids else 0
+
+    def ask_price(self, affirm=True):
+        """Returns price required to match counter-bid(s)."""
+
+        # Ask price for reverse of same outcome.
+        direct_ask = 100 - self.bid_price(not affirm)
+
+        num_outcomes = (Outcome.objects
+            .filter(proposition=self.proposition).count())
+        # Combined ask price for all other outcomes.
+        indirect_ask = 100 if affirm else 100*(num_outcomes-1)
+
+        # Subtract bids for other outcomes from combined ask.
+        for outcome in (self.proposition.outcomes()
+            .exclude(id=self.id)):
+
+            indirect_ask -= outcome.bid_price(affirm)
+
+        # Return ask price corresponding to the best deal.
+        return min(direct_ask, indirect_ask)
+
+    def latest_price(self, affirm=True, time=None):
+        """Returns the latest price for this outcome."""
+
+        if time:
+            time_str = time.strftime('%Y-%m-%d %H:%M:%S')
+            # Get the latest price prior to the given time.
+            price = (Price.prices
+                .filter(outcome=self)
+                .filter(time__lt=time_str)
+                .first())
+
+        # Use the current time by default.
+        else:
+            price = (Price.prices
+                .filter(outcome=self)
+                .first())
+
+        # Use default price if none yet exist.
+        def_price = round(100 / self.proposition.outcomes().count())
+        price = price.price if price else def_price
+        # Complement the price in case of negative.
+        return price if affirm else 100 - price
+
+    def average_price(self, affirm=True, start=None, end=None):
+        """Returns the average price in the given time period."""
+
+        # Start at the current time by default.
+        if not start: start = datetime.now()
+        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
+
+        # End at the current time by default.
+        if not end: end = datetime.now()
+        end_str = end.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Get all prices in the given range.
+        prices = list((Price.prices
+            .filter(outcome=self)
+            .filter(time__gt=start_str)
+            .filter(time__lt=end_str)))
+
+        # Calculate and return average price.
+        vol = sum(p.quantity for p in prices)
+        if vol > 0: return sum(p.price * p.quantity for p in prices) / vol
+        # Return latest price if there is no volume in this period.
+        else: return self.latest_price(affirm=affirm, time=start)
+
+    def price_change(self, affirm=True, start=None, end=None):
+        """Get the amount (cents) by which the price has changed."""
+
+        # Start from yesterday by default.
+        if not start: start = datetime.now() - timedelta(days=1)
+        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
+
+        # End at the current time by default.
+        if not end: end = datetime.now()
+        end_str = end.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return price difference.
+        return self.latest_price(affirm, end) - self.latest_price(affirm, start)
+
+    def percentage_change(self, affirm=True, start=None, end=None):
+        """Get the percentage by which the price has changed."""
+
+        # Start from yesterday by default.
+        if not start: start = datetime.now() - timedelta(days=1)
+        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return change as a percentage.
+        change = self.price_change(affirm, start, end)
+        return int(100 * change / self.latest_price(affirm, start))
+
+    def orders(self, affirm=True):
+        """Get all of the orders on this outcome."""
+        return Order.objects.filter(outcome=self).filter(affirm=affirm)
+
+    def prices(self, start, end=None, res=30):
+        """Get a list of price-time tuples representing price history."""
+
+        if not end: end = datetime.now()
+        # Size of time interval.
+        step = (end - start) / res
+
+        return [{
+            # Calculate average price for each interval.
+            'price': self.average_price(
+                start=start+step*(t-0.5), end=start+step*(t+0.5)),
+            'time': start + step*t
+        } for t in range(res+1)]
 
 class Order(models.Model):
     """A pending order awaiting a matching counter-order."""
@@ -222,8 +267,11 @@ class Order(models.Model):
     proposition = models.ForeignKey('Proposition', on_delete=models.CASCADE,
         help_text='The proposition on which the order is placed.')
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-        help_text='The user who placed the order.')
+    outcome = models.ForeignKey('Outcome', on_delete=models.CASCADE,
+        help_text='The outcome being bet on.')
+
+    affirm = models.BooleanField(
+        help_text='Whether the order is for the affirmative.')
 
     price = models.IntegerField(
         help_text='The price the user is willing to pay per token (c).')
@@ -231,76 +279,285 @@ class Order(models.Model):
     quantity = models.IntegerField(
         help_text='The number of tokens the user wants to purchase.')
 
-    affirmative = models.BooleanField(
-        help_text='Whether the order is for the negative or affirmative.')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+         help_text='The user who placed the order.')
 
     time = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        type = 'Affirmative' if self.affirmative else 'Negative'
-        return ('['+str(self.proposition.code)+'] '+self.user.username
-                +': '+str(self.quantity)+'x '+type+' @ '+str(self.price)+'c')
+        return ('['+str(self.proposition.code)+':'+self.outcome.code+'] x'+
+                str(self.quantity)+' @ '+str(self.price)+'c ('+self.user.username+')')
 
-    class Meta: ordering = ['proposition', 'affirmative', '-price', 'time']
+    class Meta: ordering = ['proposition', 'outcome', '-price', 'time']
 
-    def refund(self):
-        """Cancels this order and refunds the user."""
+    def match(self):
+        """Attempt to match this order with opposing orders."""
 
-        # Refund price of order.
-        funds = Funds.objects.get(user_id=self.user.id)
-        funds.value = float(funds.value) + (self.price * self.quantity / 100)
+        # Continue until all possible matches are made.
+        while self.quantity > 0:
+
+            # Find best direct and indirect match.
+            direct_match, direct_ask = self.get_direct_match()
+            indirect_matches, indirect_ask = self.get_indirect_match()
+
+            # Stop if all other bids are too expensive to be matched.
+            if direct_ask > self.price and indirect_ask > self.price: break
+
+            # If trading with the direct match is the best deal.
+            elif direct_ask <= indirect_ask:
+                self.do_direct_match(direct_match, direct_ask)
+
+            # If trading with the indirect match is the best deal.
+            elif indirect_ask < direct_ask:
+                self.do_indirect_match(indirect_matches, indirect_ask)
+
+    def get_direct_match(self):
+        """Get the best deal on a direct match on this outcome."""
+
+        # Find the best direct match.
+        # That is, another order on the opposite side of the same outcome.
+        direct_match = (Order.objects
+            .filter(outcome=self.outcome)
+            .filter(affirm=not self.affirm)
+            .filter(price__gte=100 - self.price)
+            .first())
+
+        # Determine the direct ask price.
+        direct_ask = 100 - (direct_match.price if direct_match else 0)
+
+        return direct_match, direct_ask
+
+    def get_indirect_match(self):
+        """Get the best deal on an indirect match across this proposition."""
+
+        # Find the best indirect match.
+        # That is, a group of orders on the same side of all the other outcomes.
+        indirect_matches = [o for o in (Order.objects
+            .filter(outcome=o)
+            .filter(affirm=self.affirm)
+            .first()
+            for o in self.proposition.outcomes()
+                .exclude(id=self.outcome.id)) if o]
+
+        # Determine the indirect ask price.
+        num_outcomes = self.proposition.outcomes().count()
+        indirect_ask = 100 if self.affirm else 100 * (num_outcomes - 1)
+        indirect_ask -= sum(o.price for o in indirect_matches)
+
+        return indirect_matches, indirect_ask
+
+    def do_direct_match(self, direct_match, direct_ask):
+        """Perform a direct match, a trade on a single outcome."""
+
+        # Determine how many tokens are to be traded.
+        trade_quantity = (min(direct_match.quantity, self.quantity)
+            if direct_match else self.quantity)
+
+        # Assign tokens to self.
+        self.fulfill(trade_quantity)
+        Tokens.tokens.add(self.outcome, self.affirm, trade_quantity, self.user)
+
+        # Assign tokens to trade partner.
+        if direct_match:
+            direct_match.fulfill(trade_quantity)
+            Tokens.tokens.add(direct_match.outcome, direct_match.affirm,
+                trade_quantity, direct_match.user)
+
+        # Register new price.
+        Price.prices.add_direct(self.outcome,
+            self.affirm, trade_quantity, direct_ask)
+
+    def do_indirect_match(self, indirect_matches, indirect_ask):
+        """Perform an indirect match, a trade across multiple outcomes."""
+
+        # Determine how many tokens are to be traded.
+        trade_quantity = min(o.quantity for o in indirect_matches)
+        trade_quantity = min(trade_quantity, self.quantity)
+
+        # Assign tokens to self.
+        self.fulfill(trade_quantity)
+        Tokens.tokens.add(self.outcome, self.affirm, trade_quantity, self.user)
+
+        # Assign tokens to trading partners.
+        for match in indirect_matches:
+            match.fulfill(trade_quantity)
+            Tokens.tokens.add(match.outcome, match.affirm,
+                  trade_quantity, match.user)
+
+        # Register new price.
+        offers = dict((o.outcome, o.price) for o in indirect_matches)
+        offers[self.outcome] = indirect_ask
+        Price.prices.add_indirect(self.proposition,
+            self.affirm, trade_quantity, offers)
+
+    def fulfill(self, quantity):
+        """Remove some tokens from this order."""
+
+        self.quantity -= quantity
+        if self.quantity <= 0: self.delete()
+        else: self.save()
+
+    def cancel(self):
+        """Cancels the order and refunds the user."""
+
+        # Refund order.
+        funds = Funds.users.get(self.user)
+        funds.value = float(funds.value) + self.price * self.quantity / 100
+        funds.save()
 
         # Delete order.
         self.delete()
-        funds.save()
 
-class Transaction(models.Model):
-    """A successful transaction between two users."""
+class PriceManager(models.Manager):
+    """Manager for maintaining price statistics."""
+
+    def add_direct(self, outcome, affirm, quantity, price):
+        """Add a price from a direct trade on only one outcome."""
+
+        prop = outcome.proposition
+        if not affirm: price = 100 - price
+
+        # Create a new price entry for this outcome.
+        self.create(proposition=prop, outcome=outcome,
+            price=price, quantity=quantity)
+
+        # Calculate the sum of the price of each outcome.
+        total = sum(o.latest_price() for o in prop.outcomes())
+
+        # Get the existing price of each outcome.
+        old_prices = dict((o, o.latest_price()) for o in prop.outcomes())
+
+        # For each other outcome.
+        for o in prop.outcomes().exclude(id=outcome.id):
+
+            # Scale price of each other outcome to reach target sum.
+            scaled_price = old_prices[o] * (100-price) / (total-price)
+
+            # Create a new price entry for each other outcome.
+            self.create(proposition=prop, outcome=o,
+                price=scaled_price, quantity=quantity)
+
+    def add_indirect(self, prop, affirm, quantity, prices):
+        """Add a price from an indirect trade on a group of outcomes."""
+
+        for o in prop.outcomes():
+
+            # Use actual price if it is included.
+            if o in prices: price = prices[o]
+            # Otherwise, assume the price is 0.
+            else: price = 0
+            # Complement price in case of negative.
+            if not affirm: price = 100 - price
+
+            # Create a new price for this outcome.
+            self.create(proposition=prop, outcome=o,
+                price=price, quantity=quantity)
+
+class Price(models.Model):
+    """Record of a transaction for statistical purposes."""
 
     proposition = models.ForeignKey('Proposition', on_delete=models.CASCADE,
         help_text='The proposition which was traded.')
 
-    affirmative_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='yes_bidder',
-        help_text='The user in favour of the affirmative.')
-
-    negative_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='no_bidder',
-        help_text='The user in favour of the negative.')
+    outcome = models.ForeignKey('Outcome', on_delete=models.CASCADE,
+        help_text='The outcome with which this price is associated.')
 
     price = models.IntegerField(
-        help_text='The affirmative price at which the tokens were traded (c).')
+        help_text='The price which was offered for this outcome.')
 
     quantity = models.IntegerField(
         help_text='The number of tokens which were traded.')
 
     time = models.DateTimeField(auto_now=True)
 
+    prices = PriceManager()
+
     def __str__(self):
-        return ('['+str(self.proposition.code)+'] '+str(self.quantity)
+        return ('['+str(self.outcome.code)+'] '+str(self.quantity)
                 +'x @ ('+str(self.price)+'c/'+str(100-self.price)+'c)')
 
-    class Meta: ordering = ['proposition', '-time']
+    class Meta: ordering = ['proposition', 'outcome', '-time']
 
-class Stake(models.Model):
+class TokensManager(models.Manager):
+    """Manager for giving tokens to a user."""
+
+    def add(self, outcome, affirm, quantity, user):
+        """Give a user some tokens."""
+
+        print('adding tokens: ', outcome, " ", affirm, ", x", quantity)
+
+        # Get the currently held tokens.
+        tokens = self.filter(outcome=outcome).filter(user=user)
+
+        # Create new tokens if none already exist.
+        if not tokens.exists():
+            self.create(proposition=outcome.proposition, outcome=outcome,
+                affirm=affirm, quantity=quantity, user=user)
+
+        # Otherwise, modify the existing tokens.
+        else:
+            tokens = tokens.get()
+
+            # If tokens are of the same type, they are combined.
+            if tokens.affirm == affirm:
+                tokens.quantity += quantity
+                tokens.save()
+
+            # If tokens are of opposite types, they cancel out.
+            else:
+                # Provide a refund for cancelled tokens.
+                funds = Funds.users.get(user)
+                funds.value += min(quantity, tokens.quantity)
+                funds.save()
+
+                # Subtract the new quantity from the existing tokens.
+                tokens.quantity -= quantity
+
+                # A negative quantity means the type should be flipped.
+                if tokens.quantity < 0:
+                    tokens.quantity *= -1
+                    tokens.affirm ^= True
+
+                # A zero-quantity token should be deleted.
+                if tokens.quantity == 0: tokens.delete()
+                else: tokens.save()
+
+class Tokens(models.Model):
     """The stake in some proposition currently held by some user."""
 
     proposition = models.ForeignKey('Proposition', on_delete=models.CASCADE,
         help_text='The propostion in which the stake is held.')
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-        help_text='The owner of the stake.')
+    outcome = models.ForeignKey('Outcome', on_delete=models.CASCADE,
+        help_text='The outcome for which the stake is held.')
+
+    affirm = models.BooleanField(
+        help_text='Whether the stake is for the affirmative.')
 
     quantity = models.IntegerField(
         help_text='The amount of stake owned ($).')
 
-    affirmative = models.BooleanField(
-        help_text='Whether the stake is for the negative or affirmative.')
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+         help_text='The owner of the stake.')
+
+    tokens = TokensManager()
 
     def __str__(self):
-        type = 'Affirmative' if self.affirmative else 'Negative'
-        return ('['+str(self.proposition.code)+'] '+self.user.username
-                +': '+str(self.quantity)+'x '+type)
+        return ('['+str(self.proposition.code)+':'+self.outcome.code+'] x'+
+            str(self.quantity)+' ('+self.user.username+')')
 
-    class Meta: ordering = ['user', 'proposition']
+    class Meta:
+        ordering = ['user', 'proposition']
+        verbose_name_plural = 'tokens'
+
+class FundsManager(models.Manager):
+
+    """Provides the funds associated with a user."""
+    def get(self, user):
+        if not user.is_authenticated: return None
+        funds = self.filter(user_id=user.id)
+        if funds.exists(): return funds.get()
+        else: return self.create(user=user, value=0)
 
 class Funds(models.Model):
     """The current available balance of some user ($AUD)."""
@@ -310,25 +567,26 @@ class Funds(models.Model):
     value = models.DecimalField(decimal_places=2, max_digits=12,
         help_text='Available funds ($AUD).')
 
+    users = FundsManager()
+
     def __str__(self): return str(self.user) + ': $' + str(self.value)
 
     class Meta:
         ordering = ['user']
         verbose_name_plural = 'funds'
 
-    def get_estimated_value(self):
+    def estimated_value(self):
         """Provides an estimate for the net worth of this user."""
 
         # Include available funds.
         value = float(self.value)
 
         # Include stakes, scaled down by latest prices.
-        stakes = (Stake.objects
+        stakes = (Tokens.tokens
             .filter(user_id=self.user.id)
             .filter(proposition__active=True))
         for s in stakes:
-            if s.affirmative: value += s.quantity * s.proposition.get_price(affirm=True) / 100
-            else: value += s.quantity * s.proposition.get_price(affirm=False) / 100
+            value += s.quantity * s.outcome.latest_price(affirm=s.affirm) / 100
 
         # Include pending orders.
         for order in Order.objects.filter(user_id=self.user.id):

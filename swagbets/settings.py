@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '**************************************************'
+SECRET_KEY = '557e5&k7#g+wtqr=)_#t-(2wb3v^gm1i@9@&g%hgzbc52jo^yk'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'base',
     'markets',
     'accounts',
+    'colorfield',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -88,9 +89,9 @@ WSGI_APPLICATION = 'swagbets.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'swagbets',
+        'NAME': 'swagbets-dev',
         'USER': 'root',
-        'PASSWORD': '********',
+        'PASSWORD': 'FilipIsDumb69',
         'HOST': 'localhost',
         'PORT': ''
     }
@@ -119,24 +120,23 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+LANGUAGE_CODE = 'en-AU'
+TIME_ZONE = 'Australia/Perth'
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
+ATOMIC_REQUESTS = True
+
 STATIC_URL = '/static/'
-
 LOGIN_REDIRECT_URL = '/markets'
-
 LOGIN_URL = '/accounts/login'
 
-ATOMIC_REQUESTS = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True

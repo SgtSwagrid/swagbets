@@ -1,0 +1,72 @@
+{% load static %}
+<script type="text/javascript" src="{% static "markets/js/graph.js" %}"></script>
+
+<canvas id="graph" height="190"></canvas>
+<br>
+
+<div class="text-center">
+    <div class="btn-group btn-group-sm">
+        <a class="btn btn-default" id="hour">Hour</a>
+        <a class="btn btn-default" id="day">Day</a>
+        <a class="btn btn-default" id="week">Week</a>
+        <a class="btn btn-default" id="month">Month</a>
+        <a class="btn btn-default" id="year">Year</a>
+    </div>
+</div>
+
+<script type="text/javascript">
+    new Chart($("#graph")[0].getContext("2d"), {
+        type: "line",
+        data: {
+            datasets: [
+                {% for outcome in outcomes %}
+                {
+                    label: "{{ outcome.description }}",
+                    borderColor: "{{ outcome.colour }}",
+                    cubicInterpolationMode: 'monotone',
+                    fill: false,
+                    data: [
+                        {% for price in outcome.prices %}
+                        {
+                            x: "{{ price.time | date:"c" }}",
+                            y: {{ price.price }}
+                        },
+                        {% endfor %}
+                    ]
+                },
+                {% endfor %}
+            ]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    type: "time",
+                    time: {
+                        min: "{{ start_time | date:"c" }}",
+                        max: "{{ end_time | date:"c" }}"
+                    },
+                }],
+                yAxes: [{
+                    ticks: {
+                        min: 0,
+                        max: 100
+                    }
+                }]
+            },
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15
+                }
+            },
+            elements: {
+                point: {
+                    radius: 0,
+                    hitRadius: 0
+                }
+            }
+        }
+    });
+</script>

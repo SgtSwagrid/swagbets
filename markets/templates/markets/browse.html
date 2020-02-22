@@ -2,40 +2,55 @@
 {% load static %}
 
 {% block header %}
+<title>Swagbets Markets</title>
 {% include 'base/navbar.html' with active='markets' %}
 {% endblock %}
 
 {% block content %}
 
-<h3 class="text-center"><b>PROPOSITIONAL MARKETS</b></h3>
-<br /><br />
+<br>
+<h3 class="text-center"><b>PROPOSITION MARKETS</b></h3>
+<br>
 <table class="table table-hover">
     <thead>
+        <th></th>
         <th>CODE</th>
         <th>PROPOSITION</th>
-        <th class="text-success">AFFIRMATIVE</th>
-        <th class="text-danger">NEGATIVE</th>
-        <th class="text-warning">VOLUME (24H)</th>
-        <th>RESOLVES ON</th>
-        <th></th>
+        <th>RESOLVES</th>
     </thead>
     <tbody>
         {% for p in propositions %}
         <tr>
+            {% if p.active %}
+            <td><a href="{{ p.code }}"><button type="button" class="btn btn-primary btn-me">View</button></a></td>
+            {% else %}
+            <td><a href="{{ p.code }}"><button type="button" class="btn btn-warning btn-me">View</button></a></td>
+            {% endif %}
             <td><h4 class="lead">[{{ p.code }}]</h4></td>
             <td><h4><small>{{ p.description }}</small></h4></td>
-            <td><h4 class="lead text-success">{{ p.price_aff }}&#162; <small>({{ p.change_aff }}%)</small></h4></td>
-            <td><h4 class="lead text-danger">{{ p.price_neg }}&#162; <small>({{ p.change_neg }}%)</small></h4></td>
-            <td><h4 class="lead text-warning">${{ p.volume }}</h4></td>
-            <td><h4><small>{{ p.resolve_date }}</small></h4></td>
-            <td><a href="{{ p.code }}"><button type="button" class="btn btn-primary btn-me">View</button></a></td>
+            {% if p.active %}
+            <td><h4><small>{{ p.resolves }}</small></h4></td>
+            {% else %}
+            <td><h4><small class="text-success">RESOLVED</small></h4></td>
+            {% endif %}
         </tr>
         {% endfor %}
     </tbody>
 </table>
-<br /><br />
+{% if not show_completed %}
 <div class="text-center">
-    <a href=""><button type="button" class="btn btn-default btn-lg">Create New Proposition</button></a>
+    <a href="/markets?show-completed"><button type="button" class="btn btn-default btn-sm">
+        <span class="glyphicon glyphicon-eye-open"></span>
+        Show Completed Propositions
+    </button></a>
 </div>
+{% else %}
+<div class="text-center">
+    <a href="/markets"><button type="button" class="btn btn-default btn-sm">
+        <span class="glyphicon glyphicon-eye-close"></span>
+        Hide Completed Propositions
+    </button></a>
+</div>
+{% endif %}
 
 {% endblock %}

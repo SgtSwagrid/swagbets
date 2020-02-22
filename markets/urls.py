@@ -11,5 +11,6 @@ urlpatterns = [
 
     # Information page for proposition.
     path('<str:code>', views.proposition_view),
-    path('<str:code>/history', views.history_view),
+    path('<str:code>/order', views.order_view),
+    path('<str:code>/graph', views.graph_view)
 ]
