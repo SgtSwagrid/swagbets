@@ -32,8 +32,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'swagbets.net',
     'www.swagbets.net',
-    'swagbets/herokuapp.com',
-    'www.swagbets/herokuapp.com'
+    'swagbets.herokuapp.com',
+    'www.swagbets.herokuapp.com'
 ]
 
 
