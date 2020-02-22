@@ -1,0 +1,83 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+<title>Swagbets</title>
+{% include 'base/navbar.html' %}
+{% endblock %}
+
+{% block content %}
+
+<br><br>
+<h1 class="text-center"><b>Welcome to Swagbets,</b></h1>
+<h4 class="text-center text-muted">a platform for speculating on future events with market-based odds.</h4>
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <p class="text-center text-muted">
+            <br>
+            Tokens are traded on various outcomes, with prices serving to aggregate relevant knowledge
+            and insights distributed among many traders with disparate information and experience,
+            allowing the best possible predictions to emerge regarding uncertain future events.
+            <br><br>
+            SwagBets is an example of a <i>prediction market</i>. Prediction markets
+            serve as interesting demonstrations of market price discovery, and are
+            often to said to outperform polls and pundits in predictive accuracy.
+        </p>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+<br><br>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <img src="{% static 'base/img/stock.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">
+                        Take a look at the list of currently traded propositions.
+                        Select a proposition and outcome to view current odds and place bids.
+                    </p>
+                    <br />
+                    <a href="/markets"><button type="button" class="btn btn-primary btn-block">View Markets</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <img src="{% static 'base/img/balance.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">
+                        View your funds, current stakes, payouts and pending bids.
+                        Tokens are paid out if and when your bet is deemed correct.
+                    </p>
+                    <br />
+                    <a href="/markets/balances"><button type="button" class="btn btn-primary btn-block">Show Balances</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-body text-center">
+                    <img src="{% static 'base/img/avatar.png' %}" width="200px" height="200px" />
+                    <br /><br /><br />
+                    <p class="text-muted">
+                        Open a new account to start trading.
+                        An account is required to place bids on tokens for any outcome, but not to view latest odds.
+                    </p>
+                    <br />
+                    <a href="/accounts/register"><button type="button" class="btn btn-primary btn-block">Create Account</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

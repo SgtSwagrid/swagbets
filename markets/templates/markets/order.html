@@ -1,0 +1,201 @@
+{% load static %}
+<script type="text/javascript" src="{% static "markets/js/order.js" %}"></script>
+
+<div class="well text-center">
+    <form method="POST" class="form-horizontal" id="order-form">
+        {% csrf_token %}
+        <br>
+
+        <div class="btn-group btn-block">
+            <button class="btn btn-primary btn-lg btn-block dropdown-toggle"
+                    type="button" id="outcome" data-toggle="dropdown">
+                {{ outcome.description }}<br>
+                <span class="caret"></span>
+            </button>
+            <ul id = "outcomes" class="dropdown-menu" role="menu">
+                {% for outcome in outcomes %}
+                <li id="{{ outcome.code }}"><a>{{ outcome.description }}
+                    ({{ outcome.latest_price }}&#162;)</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <br><br>
+
+        {% if user.is_staff and prop.active %}
+        <div class="text-center">
+            <button class="btn btn-warning btn-block" id="resolve">
+                Resolve for [{{ outcome.code }}]
+            </button>
+        </div>
+        <br>
+        {% endif %}
+
+        <div class="btn-group btn-group-justified">
+            {% if outcome.affirm %}
+            <a class="btn btn-success active" id="btn-aff">
+                <span class="glyphicon glyphicon-star"></span>
+                Affirmative
+            </a>
+            <a class="btn btn-danger" id="btn-neg">
+                Negative
+            </a>
+            {% else %}
+            <a class="btn btn-success" id="btn-aff">
+                Affirmative
+            </a>
+            <a class="btn btn-danger active" id="btn-neg">
+                <span class="glyphicon glyphicon-star"></span>
+                Negative
+            </a>
+            {% endif %}
+        </div>
+
+        <hr style="border: 0.5px solid lightgray;">
+
+        <div class="btn-group btn-group-justified">
+            <a class="btn btn-default" id="highest-bid">
+                <h3 class="text-center text-warning">{{ outcome.bid_price }}&#162;</h3>
+                <h6 class="text-center text-muted">HIGHEST<br>BID</h6>
+                <h5><br></h5>
+                <span class="caret"></span>
+            </a>
+            <a class="btn btn-default" id="latest-price">
+                <h3 class="text-center text-warning">{{ outcome.latest_price }}&#162;</h3>
+                <h6 class="text-center text-muted">LATEST<br>PRICE</h6>
+                {% if outcome.price_change >= 0 %}
+                <h5 class="text-center text-success">(+{{ outcome.price_change }}%)</h5>
+                {% else %}
+                <h5 class="text-center text-danger">({{ outcome.price_change }}%)</h5>
+                {% endif %}
+                <span class="caret"></span>
+            </a>
+            <a class="btn btn-default" id="lowest-ask">
+                <h3 class="text-center text-warning">{{ outcome.ask_price }}&#162;</h3>
+                <h6 class="text-center text-muted">LOWEST<br>ASK</h6>
+                <h5><br></h5>
+                <span class="caret"></span>
+            </a>
+        </div>
+
+        <hr style="border: 0.5px solid lightgray;">
+
+        <div class="form-group row">
+            <div class="col-xs-5 control-label">
+                <label for="{{ order_form.price.id_for_label }}"
+                class="text-muted text-center">PRICE (&#162;)</label>
+            </div>
+            <div class="col-xs-7">
+                {{ order_form.price }}
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-xs-5 control-label">
+                <label for="{{ order_form.price.id_for_label }}"
+                class="text-muted text-center">QUANTITY</label>
+            </div>
+            <div class="col-xs-7">
+                {{ order_form.quantity }}
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <div class="col-xs-5 control-label">
+                <label for="{{ order_form.price.id_for_label }}"
+                class="text-muted text-center">TOTAL ($)</label>
+            </div>
+            <div class="col-xs-7">
+                {{ order_form.total }}
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-basic btn-xs" id="t5">$5</button>
+        <button type="button" class="btn btn-basic btn-xs" id="t10">$10</button>
+        <button type="button" class="btn btn-basic btn-xs" id="t20">$20</button>
+        <button type="button" class="btn btn-basic btn-xs" id="t50">$50</button>
+
+        <br><br>
+        {% if funds %}
+        <p class="text-muted">Available: ${{ funds.value }}</p>
+        {% endif %}
+
+        <div class="text-center">
+            <button class="btn btn-primary btn-block"
+                id="place-order"> Place Order
+                <span class="glyphicon glyphicon-arrow-down"></span>
+            </button>
+        </div>
+
+        {% if order_placed %}
+        <br>
+        <div class="alert alert-success alert-dismissible text-center">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <span class="glyphicon glyphicon-ok"></span>
+            Order placed successfully.
+        </div>
+        {% endif %}
+
+        {% if order_form.errors %}
+        {% for error in order_form.non_field_errors %}
+        <br>
+        <div class="alert alert-danger alert-dismissible text-center">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <span class="glyphicon glyphicon-remove"></span>
+            {{ error }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <hr style="border: 0.5px solid lightgray;">
+
+        {% if order_form.form.errors %}
+        <br />
+        {% for field in order_form.form %}
+        {% for error in field.errors %}
+        <div class="alert alert-danger text-center">
+            {{ error|escape }}
+        </div>
+        {% endfor %}
+        {% endfor %}
+        {% for error in order_form.form.non_field_errors %}
+        <div class="alert alert-danger text-center">
+            {{ error|escape }}
+        </div>
+        {% endfor %}
+        {% endif %}
+    </form>
+
+    {% if orders %}
+    <h5 class="text-center text-muted">PENDING ORDERS</h5>
+    <table class="table table-hover">
+        <tbody>
+            {% for order in orders %}
+            <tr class="text-muted">
+                <td>{{ order.user.username }}</td>
+                <td>{{ order.price }}&#162;</td>
+                <td>x{{ order.quantity }}</td>
+                <td>{{ order.time|date:"j/n" }}</td>
+                <td>{% if order.user == user %}
+                <button type="button" class="btn btn-danger btn-xs" id="cancel-{{ order.id }}">Cancel</button>
+                {% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<script type="text/javascript">
+    var True = true, False = false;
+    var prop = {{ prop | safe }};
+    var outcome = {{ outcome | safe }};
+</script>
+
+<script type="text/javascript">
+    /*var {{ order_form.id }}_prices = new Order(
+        "{{ order_form.form.quantity.id_for_label }}",
+        "{{ order_form.form.price.id_for_label }}",
+        "{{ order_form.form.total.id_for_label }}",
+        {{ order_form.max }});
+    {{ order_form.id }}_prices.price = {{ order_form.latest }};*/
+</script>

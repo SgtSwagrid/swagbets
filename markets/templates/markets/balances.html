@@ -1,0 +1,129 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+<title>Swagbets Balances</title>
+{% include 'base/navbar.html' with active='balances' %}
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-xs-6">
+        <h1 class="text-right text-success">${{ funds }}</h1>
+        <h5 class="text-right text-muted">AVAILABLE<br>FUNDS</h5>
+        <br>
+    </div>
+    <div class="col-xs-6">
+        <h1 class="text-left text-success">${{ est_value }}</h1>
+        <h5 class="text-left text-muted">ESTIMATED<br>VALUE</h5>
+        <br>
+    </div>
+</div>
+
+{% if active_tokens %}
+<div class="well text-center">
+    <h3 class="text-center"><b>ACTIVE TOKENS</b></h3>
+    <br>
+    <table class="table table-hover">
+        <thead>
+            <th>CODE</th>
+            <th>PROPOSITION</th>
+            <th>OUTCOME</th>
+            <th>STAKE</th>
+            <th></th>
+        </thead>
+        <tbody>
+            {% for t in active_tokens %}
+            <tr>
+                <td><h4 class="lead">[{{ t.proposition.code }}]</h4></td>
+                <td><h4><small>{{ t.proposition.description }}</small></h4></td>
+                {% if t.affirm %}
+                <td><h4 class="text-success">{{ t.outcome.description }}</h4></td>
+                {% else %}
+                <td><h4 class="text-danger">NOT {{ t.outcome.description }}</h4></td>
+                {% endif %}
+                <td><h4 class="lead">${{ t.quantity }}</h4></td>
+                <td><a href="/markets/{{ t.proposition.code }}">
+                    <button type="button" class="btn btn-primary btn-me">View</button>
+                </a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<br>
+{% endif %}
+
+{% if inactive_tokens %}
+<div class="well text-center">
+    <h3 class="text-center"><b>RESOLVED TOKENS</b></h3>
+    <br>
+    <table class="table table-hover">
+        <thead>
+            <th>CODE</th>
+            <th>PREDICTED</th>
+            <th>ACTUAL</th>
+            <th>PAYOUT</th>
+            <th></th>
+        </thead>
+        <tbody>
+            {% for t in inactive_tokens %}
+            <tr>
+                <td><h4 class="lead">[{{ t.proposition.code }}]</h4></td>
+                {% if t.affirm %}
+                <td><h4 class="text-success">{{ t.outcome.description }}</h4></td>
+                {% else %}
+                <td><h4 class="text-danger">NOT {{ t.outcome.description }}</h4></td>
+                {% endif %}
+                <td><h4>{{ t.proposition.outcome.description }}</h4></td>
+                {% if t.affirm and t.outcome == t.proposition.outcome or not t.affirm and t.outcome != t.proposition.outcome %}
+                <td><h4 class="lead text-success">${{ t.quantity }}</h4></td>
+                {% else %}
+                <td><h4 class="lead text-danger">$0</h4></td>
+                {% endif %}
+                <td><a href="?dismiss-payout={{ t.id }}">
+                    <button type="button" class="btn btn-warning btn-me">Dismiss</button>
+                </a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<br>
+{% endif %}
+
+{% if orders %}
+<div class="well text-center">
+    <h3 class="text-center"><b>PENDING ORDERS</b></h3>
+    <br>
+    <table class="table table-hover">
+        <thead>
+            <th>CODE</th>
+            <th>OUTCOME</th>
+            <th>PRICE</th>
+            <th>QUANTITY</th>
+            <th></th>
+        </thead>
+        <tbody>
+            {% for o in orders %}
+            <tr>
+                <td><h4 class="lead">[{{ o.proposition.code }}]</h4></td>
+                {% if o.affirm %}
+                <td><h4 class="text-success">{{ o.outcome.description }}</h4></td>
+                {% else %}
+                <td><h4 class="text-danger">NOT {{ o.outcome.description }}</h4></td>
+                {% endif %}
+                <td><h4 class="lead">{{ o.price }}&#162;</h4></td>
+                <td><h4 class="lead">{{ o.quantity }}</h4></td>
+                <td><a href="?cancel-order={{ o.id }}">
+                    <button type="button" class="btn btn-danger btn-me">Cancel</button>
+                </a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

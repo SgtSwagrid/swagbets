@@ -1,0 +1,56 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+<title>Swagbets Markets</title>
+{% include 'base/navbar.html' with active='markets' %}
+{% endblock %}
+
+{% block content %}
+
+<br>
+<h3 class="text-center"><b>PROPOSITION MARKETS</b></h3>
+<br>
+<table class="table table-hover">
+    <thead>
+        <th></th>
+        <th>CODE</th>
+        <th>PROPOSITION</th>
+        <th>RESOLVES</th>
+    </thead>
+    <tbody>
+        {% for p in propositions %}
+        <tr>
+            {% if p.active %}
+            <td><a href="{{ p.code }}"><button type="button" class="btn btn-primary btn-me">View</button></a></td>
+            {% else %}
+            <td><a href="{{ p.code }}"><button type="button" class="btn btn-warning btn-me">View</button></a></td>
+            {% endif %}
+            <td><h4 class="lead">[{{ p.code }}]</h4></td>
+            <td><h4><small>{{ p.description }}</small></h4></td>
+            {% if p.active %}
+            <td><h4><small>{{ p.resolves }}</small></h4></td>
+            {% else %}
+            <td><h4><small class="text-success">RESOLVED</small></h4></td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if not show_completed %}
+<div class="text-center">
+    <a href="/markets?show-completed"><button type="button" class="btn btn-default btn-sm">
+        <span class="glyphicon glyphicon-eye-open"></span>
+        Show Completed Propositions
+    </button></a>
+</div>
+{% else %}
+<div class="text-center">
+    <a href="/markets"><button type="button" class="btn btn-default btn-sm">
+        <span class="glyphicon glyphicon-eye-close"></span>
+        Hide Completed Propositions
+    </button></a>
+</div>
+{% endif %}
+
+{% endblock %}

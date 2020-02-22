@@ -1,0 +1,80 @@
+﻿{% extends 'base/base.html' %}
+{% load static %}
+
+{% block header %}
+<title>Swagbets [{{ prop.code }}]</title>
+{% include 'base/navbar.html' with active='markets' %}
+{% endblock %}
+
+{% block content %}
+
+<script type="text/javascript" src="{% static "markets/js/proposition.js" %}"></script>
+
+<div class="row">
+    <div class="col-md-8 col-md-push-4">
+        <div class="row">
+            <div class="col-sm-7">
+                <blockquote>
+                    <div class="row">
+                        <div class="col-xs-8">
+                            <h1>[{{ prop.code }}]</h1>
+                        </div>
+                        <div class="col-xs-4">
+                            <br>
+                            <a href="/markets/{{ prop.code }}">
+                                <button class="btn btn-md btn-basic">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </a>
+                        </div>
+                    </div>
+                    <p>{{ prop.description }}</p>
+                    {% if prop.remaining > 1 %}
+                    <footer>Resolves on {{ prop.resolves }} in {{ prop.remaining }} days.</footer>
+                    {% elif prop.remaining == 1 %}
+                    <footer>Resolves on {{ prop.resolves }} in {{ prop.remaining }} day.</footer>
+                    {% else %}
+                    <footer>Resolved on {{ prop.resolves }}.</footer>
+                    {% endif %}
+                </blockquote>
+            </div>
+            <div class="col-sm-5">
+                <div class="row">
+                    <div class="col-xs-4">
+                        <h3 class="text-center text-warning">${{ prop.trade_volume }}</h3>
+                        <h6 class="text-center text-muted">24H<br>VOLUME</h6>
+                        <br>
+                    </div>
+                    <div class="col-xs-4">
+                        <h3 class="text-center text-warning">${{ prop.bid_volume }}</h3>
+                        <h6 class="text-center text-muted">PENDING<br>BIDS</h6>
+                        <br>
+                    </div>
+                    <div class="col-xs-4">
+                        <h3 class="text-center text-warning">${{ prop.total_stake }}</h3>
+                        <h6 class="text-center text-muted">TOTAL<br>STAKE</h6>
+                        <br>
+                    </div>
+                </div>
+                <br>
+            </div>
+        </div>
+        {% if result %}
+        <div class="alert alert-info text-center">
+            <span class="glyphicon glyphicon-ok"></span>
+            Resolved in favour of <strong>[{{ result.code }}] {{ result.description }}</strong>.
+        </div>
+        <br>
+        {% endif %}
+        <div id="graph-div"></div>
+    </div>
+    <div class="col-md-4 col-md-pull-8" id="order-div"></div>
+</div>
+
+<script type="text/javascript">
+    var True = true, False = false;
+    var prop = {{ prop | safe }};
+    var outcome = {{ outcome | safe }};
+</script>
+
+{% endblock %}
