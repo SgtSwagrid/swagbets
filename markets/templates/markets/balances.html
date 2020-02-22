@@ -10,12 +10,12 @@
 
 <div class="row">
     <div class="col-xs-6">
-        <h1 class="text-right text-success">${{ funds }}</h1>
+        <h1 class="text-right text-success">${{ funds|floatformat:'2' }}</h1>
         <h5 class="text-right text-muted">AVAILABLE<br>FUNDS</h5>
         <br>
     </div>
     <div class="col-xs-6">
-        <h1 class="text-left text-success">${{ est_value }}</h1>
+        <h1 class="text-left text-success">${{ est_value|floatformat:'2' }}</h1>
         <h5 class="text-left text-muted">ESTIMATED<br>VALUE</h5>
         <br>
     </div>

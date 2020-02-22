@@ -138,7 +138,7 @@ class Outcome(models.Model):
         help_text='The proposition to which this outcome belongs.')
 
     def __str__(self):
-        return '[' + self.code + '] ' + self.description
+        return '[' + self.proposition.code + ':' + self.code + '] ' + self.description
 
     class Meta: ordering = ['proposition', 'code']
 
@@ -247,7 +247,7 @@ class Outcome(models.Model):
         """Get all of the orders on this outcome."""
         return Order.objects.filter(outcome=self).filter(affirm=affirm)
 
-    def prices(self, start, end=None, res=30):
+    def prices(self, start, end=None, res=15):
         """Get a list of price-time tuples representing price history."""
 
         if not end: end = datetime.now()
@@ -285,8 +285,7 @@ class Order(models.Model):
     time = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return ('['+str(self.proposition.code)+':'+self.outcome.code+'] x'+
-                str(self.quantity)+' @ '+str(self.price)+'c ('+self.user.username+')')
+        return '[' + self.outcome.code + '] x' + self.quantity + ' @ ' + self.price + 'c'
 
     class Meta: ordering = ['proposition', 'outcome', '-price', 'time']
 
@@ -473,8 +472,7 @@ class Price(models.Model):
     prices = PriceManager()
 
     def __str__(self):
-        return ('['+str(self.outcome.code)+'] '+str(self.quantity)
-                +'x @ ('+str(self.price)+'c/'+str(100-self.price)+'c)')
+        return '[' + self.outcome.code + '] ' + self.price + 'c'
 
     class Meta: ordering = ['proposition', 'outcome', '-time']
 
@@ -543,8 +541,8 @@ class Tokens(models.Model):
     tokens = TokensManager()
 
     def __str__(self):
-        return ('['+str(self.proposition.code)+':'+self.outcome.code+'] x'+
-            str(self.quantity)+' ('+self.user.username+')')
+        return ('[' + self.outcome.code + ':' + ("YES" if self.affirm else "NO")
+            + '] x' + self.quantity + ' (' + self.user + ')')
 
     class Meta:
         ordering = ['user', 'proposition']
@@ -569,7 +567,7 @@ class Funds(models.Model):
 
     users = FundsManager()
 
-    def __str__(self): return str(self.user) + ': $' + str(self.value)
+    def __str__(self): return str(self.user) + ': $' + self.value
 
     class Meta:
         ordering = ['user']
