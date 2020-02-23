@@ -122,7 +122,7 @@ def order_view(request, code):
             'bid_price': outcome.bid_price(affirm),
             'ask_price': outcome.ask_price(affirm),
             'latest_price': outcome.latest_price(affirm),
-            'price_change': outcome.percentage_change(affirm)
+            'price_change': outcome.percent_change(affirm)
         },
         # Form details.
         'outcomes': prop.outcomes_by_price(),

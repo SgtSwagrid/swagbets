@@ -22,16 +22,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY',
-	'557e5&k7#g+wtqr=)_#t-(2wb3v^gm1i@9@&g%hgzbc52jo^yk')
+	'qar=!lv1+tg&@3!oi)^%b8x12@^z$$^lgg9ag*%b4ak1o-z)ou')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', '') != 'False'
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
     'swagbets.net',
     'www.swagbets.net',
+    'localhost',
+    '127.0.0.1',
     'swagbets.herokuapp.com',
     'www.swagbets.herokuapp.com'
 ]
@@ -79,10 +79,6 @@ TEMPLATES = [
             ],
         },
     },
-]
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
 ]
 
 WSGI_APPLICATION = 'swagbets.wsgi.application'
@@ -140,14 +136,15 @@ USE_TZ = False
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_REDIRECT_URL = '/markets'
 LOGIN_URL = '/accounts/login'
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
 
 ATOMIC_REQUESTS = True

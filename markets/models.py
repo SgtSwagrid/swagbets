@@ -15,6 +15,9 @@ class Proposition(models.Model):
     resolve_date = models.DateField(
         help_text='The date on which this proposition will resolve.')
 
+    creation_date = models.DateField(auto_now=True,
+        help_text='The date on which this proposition was created.')
+
     active = models.BooleanField(
         help_text='Whether this proposition is enabled and unresolved.',
         default=True)
@@ -52,17 +55,15 @@ class Proposition(models.Model):
 
         # Start from the beginning of time by default.
         if not start: start = datetime.min
-        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
 
         # End at the current time by default.
         if not end: end = datetime.now()
-        end_str = end.strftime('%Y-%m-%d %H:%M:%S')
 
         # Calculate the total trade volume between the start and end times.
         prices = list(Price.prices
             .filter(proposition=self)
-            .filter(time__gt=start_str)
-            .filter(time__lt=end_str))
+            .filter(time__gt=start)
+            .filter(time__lt=end))
         return round(sum(p.price * p.quantity for p in prices) / 100)
 
     def bid_volume(self):
@@ -175,69 +176,65 @@ class Outcome(models.Model):
     def latest_price(self, affirm=True, time=None):
         """Returns the latest price for this outcome."""
 
-        if time:
-            time_str = time.strftime('%Y-%m-%d %H:%M:%S')
-            # Get the latest price prior to the given time.
-            price = (Price.prices
-                .filter(outcome=self)
-                .filter(time__lt=time_str)
-                .first())
-
         # Use the current time by default.
-        else:
-            price = (Price.prices
-                .filter(outcome=self)
-                .first())
+        if not time: time = datetime.now()
 
-        # Use default price if none yet exist.
-        def_price = round(100 / self.proposition.outcomes().count())
-        price = price.price if price else def_price
-        # Complement the price in case of negative.
-        return price if affirm else 100 - price
+        # Find the latest price.
+        price = (Price.prices
+             .filter(outcome=self)
+             .filter(time__lte=time)
+             .first())
+
+        if price: price = price.price
+        # If there are no prices, assume all outcomes are equally likely.
+        else: price = round(100 / self.proposition.outcomes().count())
+
+        # Complement the price if it is for the negative.
+        return round(price if affirm else 100 - price)
 
     def average_price(self, affirm=True, start=None, end=None):
-        """Returns the average price in the given time period."""
 
-        # Start at the current time by default.
+        # Use the current time by default.
         if not start: start = datetime.now()
-        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
-
-        # End at the current time by default.
         if not end: end = datetime.now()
-        end_str = end.strftime('%Y-%m-%d %H:%M:%S')
 
-        # Get all prices in the given range.
-        prices = list((Price.prices
-            .filter(outcome=self)
-            .filter(time__gt=start_str)
-            .filter(time__lt=end_str)))
+        # Find all the prices before the end of the interval.
+        prices = Price.prices.filter(outcome=self).filter(time__lte=end)
 
-        # Calculate and return average price.
-        vol = sum(p.quantity for p in prices)
-        if vol > 0: return sum(p.price * p.quantity for p in prices) / vol
-        # Return latest price if there is no volume in this period.
-        else: return self.latest_price(affirm=affirm, time=start)
+        if prices:
+
+            # Use the prices in the interval if there are any.
+            prices_in_interval = prices.filter(time__gte=start)
+            if prices_in_interval: prices = prices_in_interval
+            # Otherwise, use most recent interval of prices.
+            else: prices = prices.filter(time__gte=prices.first().time - (end-start))
+
+            # Calculate the average price in the interval.
+            vol = sum(p.quantity for p in prices)
+            price = sum(p.price * p.quantity for p in prices) / vol
+
+        # If there are no prices, assume all outcomes are equally likely.
+        else: price = round(100 / self.proposition.outcomes().count())
+
+        # Complement the price if it is for the negative.
+        return round(price if affirm else 100 - price)
 
     def price_change(self, affirm=True, start=None, end=None):
         """Get the amount (cents) by which the price has changed."""
 
         # Start from yesterday by default.
         if not start: start = datetime.now() - timedelta(days=1)
-        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
-
         # End at the current time by default.
         if not end: end = datetime.now()
-        end_str = end.strftime('%Y-%m-%d %H:%M:%S')
 
         # Return price difference.
         return self.latest_price(affirm, end) - self.latest_price(affirm, start)
 
-    def percentage_change(self, affirm=True, start=None, end=None):
+    def percent_change(self, affirm=True, start=None, end=None):
         """Get the percentage by which the price has changed."""
 
         # Start from yesterday by default.
         if not start: start = datetime.now() - timedelta(days=1)
-        start_str = start.strftime('%Y-%m-%d %H:%M:%S')
 
         # Return change as a percentage.
         change = self.price_change(affirm, start, end)
@@ -247,19 +244,37 @@ class Outcome(models.Model):
         """Get all of the orders on this outcome."""
         return Order.objects.filter(outcome=self).filter(affirm=affirm)
 
-    def prices(self, start, end=None, res=15):
+    def prices(self, start, end=None, res=20):
         """Get a list of price-time tuples representing price history."""
 
         if not end: end = datetime.now()
-        # Size of time interval.
+        # Determine the time interval size.
         step = (end - start) / res
+        # Determine the date on which the proposition was created.
+        creation = datetime.combine(self.proposition.creation_date, datetime.min.time())
 
-        return [{
-            # Calculate average price for each interval.
-            'price': self.average_price(
-                start=start+step*(t-0.5), end=start+step*(t+0.5)),
-            'time': start + step*t
-        } for t in range(res+1)]
+        prices = list()
+        # Always include the initial price.
+        prices.append({'price': self.latest_price(time=creation), 'time': creation})
+        for t in range(res+1):
+
+            # Determine the bounds of the current time interval.
+            i_start = start + step*(t-0.5)
+            i_middle = start + step*t
+            i_end = start + step*(t+0.5)
+
+            # Discard points before the proposition was created.
+            if i_start < creation: continue
+
+            # Get average price and trade volume in this interval.
+            price = self.average_price(start=i_start, end=i_end)
+            vol = self.proposition.trade_volume(start=i_start, end=i_end)
+
+            # Only include the price if there was any volume or this is an endpoint.
+            if vol>0 or t==res:
+                prices.append({'price': price, 'time': i_middle})
+
+        return prices
 
 class Order(models.Model):
     """A pending order awaiting a matching counter-order."""
@@ -285,7 +300,8 @@ class Order(models.Model):
     time = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return '[' + self.outcome.code + '] x' + self.quantity + ' @ ' + self.price + 'c'
+        return ('[' + self.outcome.code + ':' + ("YES" if self.affirm else "NO")
+            + '] x' + str(self.quantity) + ' @ ' + str(self.price) + 'c')
 
     class Meta: ordering = ['proposition', 'outcome', '-price', 'time']
 
@@ -386,8 +402,10 @@ class Order(models.Model):
         # Register new price.
         offers = dict((o.outcome, o.price) for o in indirect_matches)
         offers[self.outcome] = indirect_ask
+        volume = (trade_quantity if self.affirm else
+            (trade_quantity*(self.proposition.outcomes().count()-1)))
         Price.prices.add_indirect(self.proposition,
-            self.affirm, trade_quantity, offers)
+            self.affirm, volume, offers)
 
     def fulfill(self, quantity):
         """Remove some tokens from this order."""
@@ -472,7 +490,7 @@ class Price(models.Model):
     prices = PriceManager()
 
     def __str__(self):
-        return '[' + self.outcome.code + '] ' + self.price + 'c'
+        return '[' + self.outcome.code + '] ' + str(self.price) + 'c'
 
     class Meta: ordering = ['proposition', 'outcome', '-time']
 
@@ -542,7 +560,7 @@ class Tokens(models.Model):
 
     def __str__(self):
         return ('[' + self.outcome.code + ':' + ("YES" if self.affirm else "NO")
-            + '] x' + self.quantity + ' (' + self.user + ')')
+            + '] x' + str(self.quantity) + ' (' + str(self.user) + ')')
 
     class Meta:
         ordering = ['user', 'proposition']
@@ -567,7 +585,7 @@ class Funds(models.Model):
 
     users = FundsManager()
 
-    def __str__(self): return str(self.user) + ': $' + self.value
+    def __str__(self): return str(self.user) + ': $' + str(self.value)
 
     class Meta:
         ordering = ['user']

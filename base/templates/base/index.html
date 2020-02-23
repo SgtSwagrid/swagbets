@@ -9,75 +9,39 @@
 {% block content %}
 
 <br><br>
-<h1 class="text-center"><b>Welcome to Swagbets,</b></h1>
-<h4 class="text-center text-muted">a platform for speculating on future events with market-based odds.</h4>
 <div class="row">
-    <div class="col-md-3"></div>
-    <div class="col-md-6">
+    <div class="col-md-2"></div>
+    <div class="text-center col-md-8">
+        <h1 class="text-center"><b>Welcome to Swagbets,</b></h1>
+        <h4 class="text-center text-muted">a platform for speculating on future events with market-based odds.</h4>
+        <br>
+        <img src="{% static 'base/img/stock.png' %}" width="300px" height="300px" />
+        <br><br>
         <p class="text-center text-muted">
             <br>
             Tokens are traded on various outcomes, with prices serving to aggregate relevant knowledge
             and insights distributed among many traders with disparate information and experience,
             allowing the best possible predictions to emerge regarding uncertain future events.
             <br><br>
-            SwagBets is an example of a <i>prediction market</i>. Prediction markets
+            SwagBets is a <i>prediction market</i>, which
             serve as interesting demonstrations of market price discovery, and are
             often to said to outperform polls and pundits in predictive accuracy.
         </p>
+        <br><br>
+        <a href="/markets"><button type="button" class="btn btn-primary btn-lg btn-block">View Markets</button></a>
+        <br><br>
+        <a href="https://github.com/SgtSwagrid/swagbets">
+            <h5><img src="{% static 'base/img/github-logo.png' %}" width="30px" height="30px" />&ensp;
+                Swagbets source code on GitHub
+            </h5>
+        </a>
+        <a href="https://www.aeaweb.org/articles?id=10.1257/0895330041371321">
+            <h5><img src="{% static 'base/img/aea-logo.png' %}" width="30px" height="30px" />&ensp;
+                AEA article on prediction markets
+            </h5>
+        </a>
     </div>
-    <div class="col-md-3"></div>
-</div>
-<br><br>
-
-<div class="row">
-    <div class="col-md-4">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-body text-center">
-                    <img src="{% static 'base/img/stock.png' %}" width="200px" height="200px" />
-                    <br /><br /><br />
-                    <p class="text-muted">
-                        Take a look at the list of currently traded propositions.
-                        Select a proposition and outcome to view current odds and place bids.
-                    </p>
-                    <br />
-                    <a href="/markets"><button type="button" class="btn btn-primary btn-block">View Markets</button></a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-body text-center">
-                    <img src="{% static 'base/img/balance.png' %}" width="200px" height="200px" />
-                    <br /><br /><br />
-                    <p class="text-muted">
-                        View your funds, current stakes, payouts and pending bids.
-                        Tokens are paid out if and when your bet is deemed correct.
-                    </p>
-                    <br />
-                    <a href="/markets/balances"><button type="button" class="btn btn-primary btn-block">Show Balances</button></a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-body text-center">
-                    <img src="{% static 'base/img/avatar.png' %}" width="200px" height="200px" />
-                    <br /><br /><br />
-                    <p class="text-muted">
-                        Open a new account to start trading.
-                        An account is required to place bids on tokens for any outcome, but not to view latest odds.
-                    </p>
-                    <br />
-                    <a href="/accounts/register"><button type="button" class="btn btn-primary btn-block">Create Account</button></a>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="col-md-2"></div>
 </div>
 
 {% endblock %}
