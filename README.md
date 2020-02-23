@@ -11,4 +11,4 @@ http://www.swagbets.net/
 https://www.aeaweb.org/articles?id=10.1257/0895330041371321
 
 #### PredictIt
-See also: https://www.predictit.org/
+https://www.predictit.org/
