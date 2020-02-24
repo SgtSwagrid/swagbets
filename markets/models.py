@@ -15,7 +15,7 @@ class Proposition(models.Model):
     resolve_date = models.DateField(
         help_text='The date on which this proposition will resolve.')
 
-    creation_date = models.DateField(auto_now=True,
+    creation_date = models.DateField(
         help_text='The date on which this proposition was created.')
 
     active = models.BooleanField(
