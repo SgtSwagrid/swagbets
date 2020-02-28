@@ -7,11 +7,11 @@ class LoginForm(forms.Form):
     """Form used to login to existing account."""
 
     username = forms.CharField(widget=forms.TextInput({
-        'static': 'Username',
+        'placeholder': 'Username',
         'class': 'text-center'
     }))
     password = forms.CharField(widget=forms.PasswordInput({
-        'static': 'Password',
+        'placeholder': 'Password',
         'class': 'text-center'
     }))
 
@@ -42,15 +42,15 @@ class RegisterForm(forms.ModelForm):
     """Form used to register new account."""
 
     username = forms.CharField(widget=forms.TextInput({
-        'static': 'Username',
+        'placeholder': 'Username',
         'class': 'text-center'
     }))
-    email = forms.EmailField(widget=forms.TextInput({
-        'static': 'Email',
+    email = forms.EmailField(widget=forms.EmailInput({
+        'placeholder': 'Email',
         'class': 'text-center'
     }))
     password = forms.CharField(widget=forms.PasswordInput({
-        'static': 'Password',
+        'placeholder': 'Password',
         'class': 'text-center'
     }))
 

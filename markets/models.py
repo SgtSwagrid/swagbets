@@ -245,7 +245,8 @@ class Outcome(models.Model):
 
         # Return change as a percentage.
         change = self.price_change(affirm, start, end)
-        return int(100 * change / self.latest_price(affirm, start))
+        price = self.latest_price(affirm, start)
+        return int(100 * change / price) if price > 0 else 0
 
     def orders(self, affirm=True):
         """Get all of the orders on this outcome."""
