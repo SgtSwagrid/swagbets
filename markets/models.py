@@ -173,19 +173,25 @@ class Outcome(models.Model):
         # Return ask price corresponding to the best deal.
         return min(direct_ask, indirect_ask)
 
-    def latest_price(self, affirm=True, time=None):
-        """Returns the latest price for this outcome."""
+    def latest_transaction(self, time=None):
+        """Returns the latest transaction which took place."""
 
         # Use the current time by default.
         if not time: time = datetime.now()
 
         # Find the latest price.
-        price = (Price.prices
+        return (Price.prices
              .filter(outcome=self)
              .filter(time__lte=time)
              .first())
 
-        if price: price = price.price
+    def latest_price(self, affirm=True, time=None):
+        """Returns the latest price for this outcome."""
+
+        # Get the most recent transaction.
+        transaction = self.latest_transaction(time)
+
+        if transaction: price = transaction.price
         # If there are no prices, assume all outcomes are equally likely.
         else: price = round(100 / self.proposition.outcomes().count())
 
@@ -193,6 +199,7 @@ class Outcome(models.Model):
         return round(price if affirm else 100 - price)
 
     def average_price(self, affirm=True, start=None, end=None):
+        """Determine the average price in the time period."""
 
         # Use the current time by default.
         if not start: start = datetime.now()
@@ -250,21 +257,26 @@ class Outcome(models.Model):
         if not end: end = datetime.now()
         # Determine the time interval size.
         step = (end - start) / res
-        # Determine the date on which the proposition was created.
-        creation = datetime.combine(self.proposition.creation_date, datetime.min.time())
 
         prices = list()
-        # Always include the initial price.
-        prices.append({'price': self.latest_price(time=creation), 'time': creation})
+
+        transaction = self.latest_transaction(start)
+        if transaction:
+            # Include the latest transaction before start time if present.
+            i_price = self.average_price(start=transaction.time-step, end=transaction.time)
+            i_time = transaction.time - step/2
+            prices.append({'price': i_price, 'time': i_time})
+        else:
+            # Otherwise, include the initial price.
+            created = datetime.combine(self.proposition.creation_date, datetime.min.time())
+            prices.append({'price': self.latest_price(time=created), 'time': created})
+
         for t in range(res+1):
 
             # Determine the bounds of the current time interval.
             i_start = start + step*(t-0.5)
             i_middle = start + step*t
             i_end = start + step*(t+0.5)
-
-            # Discard points before the proposition was created.
-            if i_start < creation: continue
 
             # Get average price and trade volume in this interval.
             price = self.average_price(start=i_start, end=i_end)
