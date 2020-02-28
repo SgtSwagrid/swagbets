@@ -512,8 +512,6 @@ class TokensManager(models.Manager):
     def add(self, outcome, affirm, quantity, user):
         """Give a user some tokens."""
 
-        print('adding tokens: ', outcome, " ", affirm, ", x", quantity)
-
         # Get the currently held tokens.
         tokens = self.filter(outcome=outcome).filter(user=user)
 
