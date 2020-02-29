@@ -3,10 +3,10 @@
 
 {% block header %}
 <title>Swagbets [{{ prop.code }}]</title>
-{% include 'base/navbar.html' with active='markets' %}
 {% endblock %}
 
 {% block content %}
+{% include 'base/navbar.html' with active='markets' %}
 
 <script type="text/javascript" src="{% static "markets/js/proposition.js" %}"></script>
 
