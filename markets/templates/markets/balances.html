@@ -27,11 +27,13 @@
     <br>
     <table class="table table-hover">
         <thead>
-            <th>CODE</th>
-            <th>PROPOSITION</th>
-            <th>OUTCOME</th>
-            <th>STAKE</th>
-            <th></th>
+            <tr>
+                <th class="text-center">CODE</th>
+                <th class="text-center">PROPOSITION</th>
+                <th class="text-center">OUTCOME</th>
+                <th class="text-center">STAKE</th>
+                <th class="text-center"></th>
+            </tr>
         </thead>
         <tbody>
             {% for t in active_tokens %}
@@ -61,11 +63,13 @@
     <br>
     <table class="table table-hover">
         <thead>
-            <th>CODE</th>
-            <th>PREDICTED</th>
-            <th>ACTUAL</th>
-            <th>PAYOUT</th>
-            <th></th>
+            <tr>
+                <th class="text-center">CODE</th>
+                <th class="text-center">PREDICTED</th>
+                <th class="text-center">ACTUAL</th>
+                <th class="text-center">PAYOUT</th>
+                <th class="text-center"></th>
+            </tr>
         </thead>
         <tbody>
             {% for t in inactive_tokens %}
@@ -99,11 +103,13 @@
     <br>
     <table class="table table-hover">
         <thead>
-            <th>CODE</th>
-            <th>OUTCOME</th>
-            <th>PRICE</th>
-            <th>QUANTITY</th>
-            <th></th>
+            <tr>
+                <th class="text-center">CODE</th>
+                <th class="text-center">OUTCOME</th>
+                <th class="text-center">PRICE</th>
+                <th class="text-center">QUANTITY</th>
+                <th class="text-center"></th>
+            </tr>
         </thead>
         <tbody>
             {% for o in orders %}
