@@ -10,31 +10,37 @@
 
 <br>
 <h3 class="text-center"><b>PROPOSITION MARKETS</b></h3>
-<br>
+<br><br>
 <table class="table table-hover">
     <thead>
         <tr>
-            <th></th>
-            <th>CODE</th>
-            <th>PROPOSITION</th>
-            <th>RESOLVES</th>
+            <th class="col-xs-5">Proposition</th>
+            <th class="col-xs-2">Leader</th>
+            <th class="col-xs-2">Leader Price</th>
+            <th class="col-xs-2">Resolves</th>
+            <th class="col-xs-1"></th>
         </tr>
     </thead>
     <tbody>
         {% for p in propositions %}
         <tr>
-            {% if p.active %}
-            <td><a href="{{ p.code }}"><button type="button" class="btn btn-primary btn-me">View</button></a></td>
-            {% else %}
-            <td><a href="{{ p.code }}"><button type="button" class="btn btn-warning btn-me">View</button></a></td>
-            {% endif %}
-            <td><h4 class="lead">[{{ p.code }}]</h4></td>
-            <td><h4><small>{{ p.description }}</small></h4></td>
+            <td>
+                <h4>[{{ p.code }}]</h4>
+                <small>{{ p.description }}</small>
+            </td>
+            <td>
+                <h4>[{{ p.leader.outcome.code }}]</h4>
+                <p>{{ p.leader.outcome.description }}</p>
+            </td>
+            <td><h4 class="text-info lead">{{ p.leader.price }}&#162;</h4></td>
             {% if p.active %}
             <td><h4><small>{{ p.resolves }}</small></h4></td>
             {% else %}
             <td><h4><small class="text-success">RESOLVED</small></h4></td>
             {% endif %}
+            <td><a href="{{ p.code }}"><br>
+                <button type="button" class="btn btn-primary btn-sm">View</button>
+            </a></td>
         </tr>
         {% endfor %}
     </tbody>

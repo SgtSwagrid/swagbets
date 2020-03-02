@@ -8,128 +8,158 @@
 {% block content %}
 {% include 'base/navbar.html' with active='balances' %}
 
-<div class="row">
-    <div class="col-xs-6">
-        <h1 class="text-right text-success">${{ funds|floatformat:'2' }}</h1>
-        <h5 class="text-right text-muted">AVAILABLE<br>FUNDS</h5>
-        <br>
-    </div>
-    <div class="col-xs-6">
-        <h1 class="text-left text-success">${{ est_value|floatformat:'2' }}</h1>
-        <h5 class="text-left text-muted">ESTIMATED<br>VALUE</h5>
-        <br>
+<div class="alert alert-info">
+    <div class="row ">
+        <div class="col-xs-6">
+            <h1 class="text-right">${{ funds|floatformat:'2' }}</h1>
+            <h5 class="text-right text-muted">AVAILABLE<br>FUNDS</h5>
+            <br>
+        </div>
+        <div class="col-xs-6">
+            <h1 class="text-left">${{ est_value|floatformat:'2' }}</h1>
+            <h5 class="text-left text-muted">EXPECTED<br>VALUE</h5>
+            <br>
+        </div>
     </div>
 </div>
 
 {% if active_tokens %}
-<div class="well text-center">
-    <h3 class="text-center"><b>ACTIVE TOKENS</b></h3>
-    <br>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th class="text-center">CODE</th>
-                <th class="text-center">PROPOSITION</th>
-                <th class="text-center">OUTCOME</th>
-                <th class="text-center">STAKE</th>
-                <th class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in active_tokens %}
-            <tr>
-                <td><h4 class="lead">[{{ t.proposition.code }}]</h4></td>
-                <td><h4><small>{{ t.proposition.description }}</small></h4></td>
-                {% if t.affirm %}
-                <td><h4 class="text-success">{{ t.outcome.description }}</h4></td>
-                {% else %}
-                <td><h4 class="text-danger">NOT {{ t.outcome.description }}</h4></td>
-                {% endif %}
-                <td><h4 class="lead">${{ t.quantity }}</h4></td>
-                <td><a href="/markets/{{ t.proposition.code }}">
-                    <button type="button" class="btn btn-primary btn-me">View</button>
-                </a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<hr style="border: 1px solid LightSteelBlue;">
 <br>
+<h3 class="text-center"><b>ACTIVE TOKENS</b></h3>
+<br><br>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th class="col-xs-5">Proposition</th>
+            <th class="col-xs-2">Outcome</th>
+            <th class="col-xs-2">Quantity</th>
+            <th class="col-xs-2">Resolves</th>
+            <th class="col-xs-1"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in active_tokens %}
+        <tr>
+            <td>
+                <h4>[{{ t.proposition.code }}]</h4>
+                <small>{{ t.proposition.description }}</small>
+            </td>
+            {% if t.affirm %}
+            <td>
+                <h4 class="text-success">[{{ t.outcome.code }}]</h4>
+                <p class="text-success">{{ t.outcome.description }}</p>
+            </td>
+            {% else %}
+            <td>
+                <h4 class="text-danger">[{{ t.outcome.code }}]</h4>
+                <p class="text-danger">Not {{ t.outcome.description }}</p>
+            </td>
+            {% endif %}
+            <td><h4 class="text-info lead">${{ t.quantity }}</h4></td>
+            <td><h4><small>{{ t.proposition.resolves }}</small></h4></td>
+            <td><a href="/markets/{{ t.proposition.code }}"><br>
+                <button type="button" class="btn btn-primary btn-sm">View</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 
 {% if inactive_tokens %}
-<div class="well text-center">
-    <h3 class="text-center"><b>RESOLVED TOKENS</b></h3>
-    <br>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th class="text-center">CODE</th>
-                <th class="text-center">PREDICTED</th>
-                <th class="text-center">ACTUAL</th>
-                <th class="text-center">PAYOUT</th>
-                <th class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in inactive_tokens %}
-            <tr>
-                <td><h4 class="lead">[{{ t.proposition.code }}]</h4></td>
-                {% if t.affirm %}
-                <td><h4 class="text-success">{{ t.outcome.description }}</h4></td>
-                {% else %}
-                <td><h4 class="text-danger">NOT {{ t.outcome.description }}</h4></td>
-                {% endif %}
-                <td><h4>{{ t.proposition.outcome.description }}</h4></td>
-                {% if t.affirm and t.outcome == t.proposition.outcome or not t.affirm and t.outcome != t.proposition.outcome %}
-                <td><h4 class="lead text-success">${{ t.quantity }}</h4></td>
-                {% else %}
-                <td><h4 class="lead text-danger">$0</h4></td>
-                {% endif %}
-                <td><a href="?dismiss-payout={{ t.id }}">
-                    <button type="button" class="btn btn-warning btn-me">Dismiss</button>
-                </a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<hr style="border: 1px solid LightSteelBlue;">
 <br>
+<h3 class="text-center"><b>RESOLVED TOKENS</b></h3>
+<br><br>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th class="col-xs-5">Proposition</th>
+            <th class="col-xs-2">Prediction</th>
+            <th class="col-xs-2">Result</th>
+            <th class="col-xs-2">Payment</th>
+            <th class="col-xs-1"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for t in inactive_tokens %}
+        <tr>
+            <td>
+                <h4>[{{ t.proposition.code }}]</h4>
+                <small>{{ t.proposition.description }}</small>
+            </td>
+            {% if t.affirm %}
+            <td>
+                <h4 class="text-success">[{{ t.outcome.code }}]</h4>
+                <p class="text-success">{{ t.outcome.description }}</p>
+            </td>
+            {% else %}
+            <td>
+                <h4 class="text-danger">[{{ t.outcome.code }}]</h4>
+                <p class="text-danger">Not {{ t.outcome.description }}</p>
+            </td>
+            {% endif %}
+            <td>
+                <h4>[{{ t.proposition.outcome.code }}]</h4>
+                <p>{{ t.proposition.outcome.description }}</p>
+            </td>
+            {% if t.affirm and t.outcome == t.proposition.outcome or not t.affirm and t.outcome != t.proposition.outcome %}
+            <td><h4 class="lead text-success">${{ t.quantity }}</h4></td>
+            {% else %}
+            <td><h4 class="lead text-danger">$0</h4></td>
+            {% endif %}
+            <td><a href="?dismiss-payout={{ t.id }}"><br>
+                <button type="button" class="btn btn-warning btn-sm">Dismiss</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 
 {% if orders %}
-<div class="well text-center">
-    <h3 class="text-center"><b>PENDING ORDERS</b></h3>
-    <br>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th class="text-center">CODE</th>
-                <th class="text-center">OUTCOME</th>
-                <th class="text-center">PRICE</th>
-                <th class="text-center">QUANTITY</th>
-                <th class="text-center"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for o in orders %}
-            <tr>
-                <td><h4 class="lead">[{{ o.proposition.code }}]</h4></td>
-                {% if o.affirm %}
-                <td><h4 class="text-success">{{ o.outcome.description }}</h4></td>
-                {% else %}
-                <td><h4 class="text-danger">NOT {{ o.outcome.description }}</h4></td>
-                {% endif %}
-                <td><h4 class="lead">{{ o.price }}&#162;</h4></td>
-                <td><h4 class="lead">{{ o.quantity }}</h4></td>
-                <td><a href="?cancel-order={{ o.id }}">
-                    <button type="button" class="btn btn-danger btn-me">Cancel</button>
-                </a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<hr style="border: 1px solid LightSteelBlue;">
+<br>
+<h3 class="text-center"><b>PENDING ORDERS</b></h3>
+<br><br>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th class="col-xs-5">Proposition</th>
+            <th class="col-xs-2">Outcome</th>
+            <th class="col-xs-2">Price</th>
+            <th class="col-xs-2">Quantity</th>
+            <th class="col-xs-1"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for o in orders %}
+        <tr>
+            <td>
+                <h4>[{{ o.proposition.code }}]</h4>
+                <small>{{ o.proposition.description }}</small>
+            </td>
+            {% if o.affirm %}
+            <td>
+                <h4 class="text-success">[{{ o.outcome.code }}]</h4>
+                <p class="text-success">{{ o.outcome.description }}</p>
+            </td>
+            {% else %}
+            <td>
+                <h4 class="text-danger">[{{ o.outcome.code }}]</h4>
+                <p class="text-danger">Not {{ o.outcome.description }}</p>
+            </td>
+            {% endif %}
+            <td><h4 class="text-info lead">{{ o.price }}&#162;</h4></td>
+            <td><h4 class="text-info lead">${{ o.quantity }}</h4></td>
+            <td><a href="?cancel-order={{ o.id }}"><br>
+                <button type="button" class="btn btn-danger btn-sm">Cancel</button>
+            </a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 
 {% endblock %}

@@ -12,11 +12,11 @@ class Proposition(models.Model):
     description = models.CharField(max_length=100,
         help_text='The definitive proposition statement.')
 
-    resolve_date = models.DateField(
-        help_text='The date on which this proposition will resolve.')
+    resolves = models.DateTimeField(
+        help_text='The time at which this proposition resolved/will resolve.')
 
-    creation_date = models.DateField(
-        help_text='The date on which this proposition was created.')
+    created = models.DateTimeField(
+        help_text='The time at which this proposition was created.')
 
     active = models.BooleanField(
         help_text='Whether this proposition is enabled and unresolved.',
@@ -28,7 +28,7 @@ class Proposition(models.Model):
 
     def __str__(self): return '['+self.code+'] '+self.description
 
-    class Meta: ordering = ['-active', 'resolve_date', 'code']
+    class Meta: ordering = ['-active', 'resolves', 'code']
 
     def outcomes(self):
         """Return the queryset of all possible outcomes for this proposition."""
@@ -106,6 +106,8 @@ class Proposition(models.Model):
             funds = Funds.users.get(tokens.user)
             funds.value += tokens.quantity
             funds.save()
+
+        self.proposition.resolves = datetime.now()
 
     def matching_tokens(self, outcome):
         """Get all tokens predicting a particular outcome."""
@@ -188,6 +190,14 @@ class Outcome(models.Model):
     def latest_price(self, affirm=True, time=None):
         """Returns the latest price for this outcome."""
 
+        # Use the current time by default.
+        if not time: time = datetime.now()
+
+        # Price is either 0c or 100c once proposition is resolved.
+        if (not self.proposition.active and
+                time > self.proposition.resolves):
+            return 100 if (self.proposition.outcome == self) == affirm else 0
+
         # Get the most recent transaction.
         transaction = self.latest_transaction(time)
 
@@ -253,7 +263,7 @@ class Outcome(models.Model):
         return Order.objects.filter(outcome=self).filter(affirm=affirm)
 
     def prices(self, start, end=None, res=20):
-        """Get a list of price-time tuples representing price history."""
+        """Generate the prices for this price graph."""
 
         if not end: end = datetime.now()
         # Determine the time interval size.
@@ -269,8 +279,8 @@ class Outcome(models.Model):
             prices.append({'price': i_price, 'time': i_time})
         else:
             # Otherwise, include the initial price.
-            created = datetime.combine(self.proposition.creation_date, datetime.min.time())
-            prices.append({'price': self.latest_price(time=created), 'time': created})
+            created = self.proposition.created
+            prices.append({'price': self.latest_price(time=start), 'time': created})
 
         for t in range(res):
 
@@ -279,12 +289,22 @@ class Outcome(models.Model):
             i_middle = start + step*t
             i_end = start + step*(t+0.5)
 
-            # Get average price and trade volume in this interval.
-            price = self.average_price(start=i_start, end=i_end)
-            vol = self.proposition.trade_volume(start=i_start, end=i_end)
+            # Determine if the proposition resolved in this interval.
+            resolved_here = (not self.proposition.active and
+                i_start < self.proposition.resolves < i_end)
+
+            if resolved_here:
+                # Price is either 0c or 100c once proposition is resolved.
+                price = 100 if self.proposition.outcome == self else 0
+
+            else:
+                # Get average price and trade volume in this interval.
+                price = self.average_price(start=i_start, end=i_end)
+                vol = self.proposition.trade_volume(start=i_start, end=i_end)
 
             # Only include the price if there was any volume.
-            if vol>0: prices.append({'price': price, 'time': i_middle})
+            if resolved_here or vol > 0:
+                prices.append({'price': price, 'time': i_middle})
 
         prices.append({'price': self.latest_price(time=end), 'time': end})
         return prices
@@ -505,7 +525,7 @@ class Price(models.Model):
     def __str__(self):
         return '[' + self.outcome.code + '] ' + str(self.price) + 'c'
 
-    class Meta: ordering = ['proposition', 'outcome', '-time']
+    class Meta: ordering = ['proposition', '-time']
 
 class TokensManager(models.Manager):
     """Manager for giving tokens to a user."""
@@ -574,7 +594,7 @@ class Tokens(models.Model):
             + '] x' + str(self.quantity) + ' (' + str(self.user) + ')')
 
     class Meta:
-        ordering = ['user', 'proposition']
+        ordering = ['user', '-quantity', 'proposition']
         verbose_name_plural = 'tokens'
 
 class FundsManager(models.Manager):

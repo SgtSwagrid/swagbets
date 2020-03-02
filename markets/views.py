@@ -13,10 +13,11 @@ def browse_view(request):
             'trade_volume': prop.trade_volume(
                 start=datetime.now()-timedelta(days=1)),
             'bid_volume': prop.bid_volume(),
-            'resolves': prop.resolve_date,
+            'resolves': prop.resolves,
             'active': prop.active,
             'leader': {
-                'outcome': prop.outcomes_by_price()[0],
+                'outcome': prop.outcomes_by_price()[0]
+                    if prop.active else prop.outcome,
                 'price': prop.outcomes_by_price()[0].latest_price()
             },
         }, Proposition.objects.all() if 'show-completed' in request.GET else
@@ -35,8 +36,8 @@ def proposition_view(request, code):
         'prop': {
             'code': prop.code,
             'description': prop.description,
-            'resolves': prop.resolve_date.strftime('%b. %d, %Y'),
-            'remaining': (prop.resolve_date - datetime.now().date()).days,
+            'resolves': prop.resolves.strftime('%b. %d, %Y'),
+            'remaining': (prop.resolves - datetime.now()).days,
             'trade_volume': prop.trade_volume(
                 start=datetime.now()-timedelta(days=1)),
             'bid_volume': prop.bid_volume(),
