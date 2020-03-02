@@ -272,7 +272,7 @@ class Outcome(models.Model):
             created = datetime.combine(self.proposition.creation_date, datetime.min.time())
             prices.append({'price': self.latest_price(time=created), 'time': created})
 
-        for t in range(res+1):
+        for t in range(res):
 
             # Determine the bounds of the current time interval.
             i_start = start + step*(t-0.5)
@@ -283,10 +283,10 @@ class Outcome(models.Model):
             price = self.average_price(start=i_start, end=i_end)
             vol = self.proposition.trade_volume(start=i_start, end=i_end)
 
-            # Only include the price if there was any volume or this is an endpoint.
-            if vol>0 or t==res:
-                prices.append({'price': price, 'time': i_middle})
+            # Only include the price if there was any volume.
+            if vol>0: prices.append({'price': price, 'time': i_middle})
 
+        prices.append({'price': self.latest_price(time=end), 'time': end})
         return prices
 
 class Order(models.Model):
